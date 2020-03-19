@@ -11,7 +11,8 @@ import pickle
 
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
+import jax.numpy as np
+import numpy as onp
 import scipy.interpolate
 import scipy.ndimage
 import warnings

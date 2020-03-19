@@ -6,7 +6,7 @@ import time
 import astropy.io.fits as fits
 import astropy.units as units
 import matplotlib.pyplot as plt
-import numpy as np
+import jax.numpy as np
 import scipy.interpolate
 import scipy.ndimage
 import warnings
