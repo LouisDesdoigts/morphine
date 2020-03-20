@@ -1,6 +1,6 @@
 # morphine - derivatives from poppy
 ![](https://github.com/benjaminpope/morphine/workflows/integration/badge.svg)
-[![Licence](http://img.shields.io/badge/license-GPLv3-blue.svg?style=flat)](http://www.gnu.org/licenses/gpl-3.0.html)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 ## Contributors
 
