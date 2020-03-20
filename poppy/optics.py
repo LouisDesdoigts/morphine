@@ -129,7 +129,8 @@ class AnalyticOpticalElement(OpticalElement):
             scalars = 1.j * scale
             # warning, numexpr exp is crash-prone if fed complex64, so we
             # leave the scalars variable as np.complex128 for reliability
-            result = ne.evaluate("trans * exp( opd * scalars)")
+            result = trans*np.exp(opd*scalars)
+            # result = ne.evaluate("trans * exp( opd * scalars)")
 
             # TODO if single-precision, need to cast the result back to that
             # to work around a bug

@@ -127,10 +127,10 @@ def matrix_dft(plane, nlamD, npix,
     npupY, npupX = plane.shape
 
     try:
-        if np.isscalar(npix):
+        if np.size(npix)==1:
             npixY, npixX = float(npix), float(npix)
         else:
-            npixY, npixX = tuple(np.asarray(npix, dtype=float))
+            npixY, npixX = nlamD[0],nlamD[1]
     except ValueError:
         raise ValueError(
             "'npix' must be supplied as a scalar (for square arrays) or as "
@@ -142,10 +142,10 @@ def matrix_dft(plane, nlamD, npix,
         raise TypeError("'npix' must be supplied as integer value(s)")
 
     try:
-        if np.isscalar(nlamD):
+        if np.size(nlamD)==1:
             nlamDY, nlamDX = float(nlamD), float(nlamD)
         else:
-            nlamDY, nlamDX = tuple(np.asarray(nlamD, dtype=float))
+            nlamDY, nlamDX = nlamD[0],nlamD[1]
     except ValueError:
         raise ValueError(
             "'nlamD' must be supplied as a scalar (for square arrays) or as"
@@ -386,15 +386,14 @@ class MatrixFourierTransform:
             The Fourier transform of the input
         """
         self._validate_args(nlamD, npix, offset)
-        _log.debug(
-            "Forward MatrixFourierTransform: array shape {}, "
-            "centering style {}, "
-            "output region size {} in lambda / D units, "
-            "output array size {} pixels, "
-            "offset {}".format(pupil.shape, self.centering, nlamD, npix, offset)
-        )
-        return matrix_dft(pupil, nlamD, npix,
-                          centering=self.centering, offset=offset)
+        # _log.debug(
+        #     "Forward MatrixFourierTransform: array shape {}, "
+        #     "centering style {}, "
+        #     "output region size {} in lambda / D units, "
+        #     "output array size {} pixels, "
+        #     "offset {}".format(pupil.shape, self.centering, nlamD, npix, offset)
+        # )
+        return minimal_dft(pupil, nlamD, npix)
 
 
     def inverse(self, image, nlamD, npix, offset=None):

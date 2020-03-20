@@ -133,8 +133,8 @@ class BaseWavefront(ABC):
         self.ispadded = False  # is the wavefront padded for oversampling?
         self.history = []  # List of strings giving a descriptive history of actions
                            # performed on the wavefront. Saved to FITS headers.
-        self.history.append("Created wavefront: wavelength={0:.4g}, diam={1:.4g}".format(self.wavelength, self.diam))
-        self.history.append(" using array size %s" % (self.wavefront.shape,))
+        # self.history.append("Created wavefront: wavelength={0:.4g}, diam={1:.4g}".format(self.wavelength, self.diam))
+        # self.history.append(" using array size %s" % (self.wavefront.shape,))
         self.location = 'Entrance Pupil'    # Descriptive string for where a wavefront is instantaneously located.
                                             # Used mostly for titling displayed plots.
 
@@ -170,7 +170,7 @@ class BaseWavefront(ABC):
             # but instead via forcing a call to rotate() or invert() in propagate_to...
         elif np.isscalar(optic):
             self.wavefront *= optic  # it's just a scalar
-            self.history.append("Multiplied WF by scalar value " + str(optic))
+            # self.history.append("Multiplied WF by scalar value " + str(optic))
             return self
         elif not isinstance(optic, OpticalElement):
             raise ValueError('Wavefronts can only be *= multiplied by OpticalElements or scalar values')
@@ -189,7 +189,7 @@ class BaseWavefront(ABC):
         self.wavefront *= phasor
         msg = "  Multiplied WF by phasor for " + str(optic)
         _log.debug(msg)
-        self.history.append(msg)
+        # self.history.append(msg)
         self.location = 'after ' + optic.name
         return self
 
@@ -221,7 +221,7 @@ class BaseWavefront(ABC):
 
 
         self.wavefront += wave.wavefront
-        self.history.append("Summed with another wavefront!")
+        # self.history.append("Summed with another wavefront!")
         return self
 
     def __add__(self, wave):
@@ -639,7 +639,8 @@ class BaseWavefront(ABC):
         """Electric field intensity of the wavefront (i.e. field amplitude squared)"""
         if accel_math._USE_NUMEXPR:
             w = self.wavefront
-            return ne.evaluate("real(abs(w))**2")
+            return np.real(np.abs(w))**2
+            # return ne.evaluate("real(abs(w))**2")
         else:
             return np.abs(self.wavefront) ** 2
 
@@ -782,8 +783,8 @@ class BaseWavefront(ABC):
 
             tiltphasor = np.exp(2.0j * np.pi * (U * xangle_rad + V * yangle_rad) / self.wavelength)
             self.wavefront *= tiltphasor
-            self.history.append("Tilted wavefront by "
-                                "X={:2.2}, Y={:2.2} arcsec".format(Xangle, Yangle))
+            # self.history.append("Tilted wavefront by "
+                                # "X={:2.2}, Y={:2.2} arcsec".format(Xangle, Yangle))
 
         else:
             _log.warning("Wavefront.tilt() called, but requested tilt was zero. No change.")
@@ -805,7 +806,7 @@ class BaseWavefront(ABC):
         rot_imag = scipy.ndimage.interpolation.rotate(self.wavefront.imag, angle, reshape=False)
         self.wavefront = rot_real + 1.j * rot_imag
 
-        self.history.append('Rotated by {:.2f} degrees, CCW'.format(angle))
+        # self.history.append('Rotated by {:.2f} degrees, CCW'.format(angle))
 
     def invert(self, axis='both'):
         """Invert coordinates, i.e. flip the direction of the X and Y axes
@@ -827,7 +828,7 @@ class BaseWavefront(ABC):
             self.wavefront = self.wavefront[::-1]
         else:
             raise ValueError("Invalid/unknown value for the 'axis' parameter. Must be 'x', 'y', or 'both'.")
-        self.history.append('Inverted axis direction for {} axes'.format(axis.upper()))
+        # self.history.append('Inverted axis direction for {} axes'.format(axis.upper()))
 
     @abstractmethod
     def coordinates(self):
@@ -912,16 +913,18 @@ class Wavefront(BaseWavefront):
         """
         if self.planetype == optic.planetype:
             if isinstance(optic, Detector):
-                _log.debug("  Resampling wavefront to match detector pixellation.")
+                # _log.debug("  Resampling wavefront to match detector pixellation.")
                 self._resample_wavefront_pixelscale(optic)
             else:
-                _log.debug("  Wavefront and optic %s already at same plane type, no propagation needed." % optic.name)
+                pass
+                # _log.debug("  Wavefront and optic %s already at same plane type, no propagation needed." % optic.name)
             self.current_plane_index += 1
             return
         else:
-            msg = "  Propagating wavefront to %s. " % str(optic)
-            _log.debug(msg)
-            self.history.append(msg)
+            # msg = "  Propagating wavefront to %s. " % str(optic)
+            # _log.debug(msg)
+            # self.history.append(msg)
+            pass
 
         if optic.planetype == PlaneType.rotation:  # rotate
             self.rotate(optic.angle)
@@ -965,7 +968,7 @@ class Wavefront(BaseWavefront):
     #         self.ispadded = True
     #         if optic.verbose:
     #             _log.debug("    Padded WF array for oversampling by %dx" % self.oversample)
-    #         self.history.append("    Padded WF array for oversampling by %dx" % self.oversample)
+            # self.history.append("    Padded WF array for oversampling by %dx" % self.oversample)
 
     #     # Set up for computation - figure out direction & normalization
     #     if self.planetype == PlaneType.pupil and optic.planetype == PlaneType.image:
@@ -975,7 +978,7 @@ class Wavefront(BaseWavefront):
     #         self.planetype = PlaneType.image
     #         self.pixelscale = (self.wavelength / self.diam * u.radian / self.oversample).to(u.arcsec) / u.pixel
     #         self.fov = self.wavefront.shape[0] * u.pixel * self.pixelscale
-    #         self.history.append('   FFT {},  to IMAGE plane  scale={:.4f}'.format(self.wavefront.shape, self.pixelscale))
+            # self.history.append('   FFT {},  to IMAGE plane  scale={:.4f}'.format(self.wavefront.shape, self.pixelscale))
 
     #     elif self.planetype == PlaneType.image and optic.planetype == PlaneType.pupil:
     #         fft_forward = False
@@ -983,7 +986,7 @@ class Wavefront(BaseWavefront):
     #         # (pre-)update state:
     #         self.planetype = PlaneType.pupil
     #         self.pixelscale = self.diam * self.oversample / (self.wavefront.shape[0] * u.pixel)
-    #         self.history.append('   FFT {},  to PUPIL scale={:.4f}'.format(self.wavefront.shape, self.pixelscale))
+            # self.history.append('   FFT {},  to PUPIL scale={:.4f}'.format(self.wavefront.shape, self.pixelscale))
 
     #     # do FFT
     #     if conf.enable_flux_tests: _log.debug("\tPre-FFT total intensity: " + str(self.total_intensity))
@@ -1037,18 +1040,18 @@ class Wavefront(BaseWavefront):
         det_calc_size_pixels = det.fov_pixels * det.oversample
 
         mft = MatrixFourierTransform(centering='ADJUSTABLE', verbose=False)
-        if not np.isscalar(det_fov_lam_d):  # hasattr(det_fov_lam_d,'__len__'):
-            msg = '    Propagating w/ MFT: {:.4f}     fov=[{:.3f},{:.3f}] lam/D    npix={} x {}'.format(
-                det.pixelscale / det.oversample, det_fov_lam_d[0], det_fov_lam_d[1],
-                det_calc_size_pixels[0], det_calc_size_pixels[1])
-        else:
-            msg = '    Propagating w/ MFT: {:.4f}     fov={:.3f} lam/D    npix={:d}'.format(
-                det.pixelscale / det.oversample, det_fov_lam_d, int(det_calc_size_pixels))
-        _log.debug(msg)
-        self.history.append(msg)
+        # if not np.isscalar(det_fov_lam_d):  # hasattr(det_fov_lam_d,'__len__'):
+        #     msg = '    Propagating w/ MFT: {:.4f}     fov=[{:.3f},{:.3f}] lam/D    npix={} x {}'.format(
+        #         det.pixelscale / det.oversample, det_fov_lam_d[0], det_fov_lam_d[1],
+        #         det_calc_size_pixels[0], det_calc_size_pixels[1])
+        # else:
+        #     msg = '    Propagating w/ MFT: {:.4f}     fov={:.3f} lam/D    npix={:d}'.format(
+        #         det.pixelscale / det.oversample, det_fov_lam_d, int(det_calc_size_pixels))
+        # _log.debug(msg)
+        # self.history.append(msg)
         det_offset = det.det_offset if hasattr(det, 'det_offset') else (0, 0)
 
-        _log.debug('      MFT method = ' + mft.centering)
+        # _log.debug('      MFT method = ' + mft.centering)
 
         # det_offset controls how to shift the PSF.
         # it gives the coordinates (X, Y) relative to the exact center of the array
@@ -1056,15 +1059,15 @@ class Wavefront(BaseWavefront):
         # This is where a perfect PSF would be centered. Of course any tilts, comas, etc, from the OPD
         # will probably shift it off elsewhere for an entirely different reason, too.
         self.wavefront = mft.perform(self.wavefront, det_fov_lam_d, det_calc_size_pixels, offset=det_offset)
-        _log.debug("     Result wavefront: at={0} shape={1} ".format(
-            self.location, str(self.shape)))
+        # _log.debug("     Result wavefront: at={0} shape={1} ".format(
+        #     self.location, str(self.shape)))
         self._last_transform_type = 'MFT'
 
         self.planetype = PlaneType.image
         self.fov = det.fov_arcsec
         self.pixelscale = det.fov_arcsec / det_calc_size_pixels 
 
-        if not np.isscalar(self.pixelscale):
+        if np.size(self.pixelscale)>1:
             # check for rectangular arrays
             if self.pixelscale[0] == self.pixelscale[1]:
                 self.pixelscale = self.pixelscale[0]
@@ -1120,7 +1123,7 @@ class Wavefront(BaseWavefront):
         msg = '    Propagating w/ InvMFT:  scale={0}    fov={1}    npix={2:d} x {2:d}'.format(
             msg_pixscale, msg_det_fov, pupil_npix)
         _log.debug(msg)
-        self.history.append(msg)
+        # self.history.append(msg)
         # det_offset = (0,0)  # det_offset not supported for InvMFT (yet...)
 
         self.wavefront = mft.inverse(self.wavefront, det_fov_lam_d, pupil_npix)
@@ -1156,8 +1159,10 @@ class Wavefront(BaseWavefront):
 
         if accel_math._USE_NUMEXPR:
             ny, nx = shape
-            return (ne.evaluate("pixel_scale_y * (y - (ny-1)/2)"),
-                    ne.evaluate("pixel_scale_x * (x - (nx-1)/2)") )
+            return (pixel_scale_y * (y - (ny-1)/2),
+                pixel_scale_x * (x - (nx-1)/2))
+            # return (ne.evaluate("pixel_scale_y * (y - (ny-1)/2)"),
+            #         ne.evaluate("pixel_scale_x * (x - (nx-1)/2)") )
         else:
             y -= (shape[0] - 1) / 2.0
             x -= (shape[1] - 1) / 2.0
@@ -1261,8 +1266,8 @@ class Wavefront(BaseWavefront):
             print(wf.pixelscale, new_wf.pixelscale, new_wf.shape)
         # Deal with metadata
         new_wf.history = wf.history.copy()
-        new_wf.history.append("Converted to Fraunhofer propagation")
-        new_wf.history.append("  Fraunhofer array pixel scale = {:.4g}, oversample = {}".format(new_wf.pixelscale, new_wf.oversample))
+        # new_wf.history.append("Converted to Fraunhofer propagation")
+        # new_wf.history.append("  Fraunhofer array pixel scale = {:.4g}, oversample = {}".format(new_wf.pixelscale, new_wf.oversample))
         # Copy over the contents of the array
         new_wf.wavefront = utils.pad_or_crop_to_shape(wf.wavefront, new_wf.shape)
         # Copy over misc internal info
@@ -1690,7 +1695,7 @@ class BaseOpticalSystem(ABC):
         if conf.enable_speed_tests:
             t_start = time.time()
         if self.verbose:
-            _log.info(" Propagating wavelength = {0:g}".format(wavelength))
+            _log.info(" Propagating wavelength %.2f" % wavelength)
         wavefront = self.input_wavefront(wavelength)
 
         kwargs = {'normalize': normalize,
@@ -2052,14 +2057,14 @@ class OpticalSystem(BaseOpticalSystem):
                 wavefront.normalize()
                 _log.debug("normalizing at last plane to 1.0 total intensity")
 
-            # Optional outputs:
-            if conf.enable_flux_tests:
-                _log.debug("  Flux === " + str(wavefront.total_intensity))
+            # # Optional outputs:
+            # if conf.enable_flux_tests:
+            #     _log.debug("  Flux === " + str(wavefront.total_intensity))
 
-            if return_intermediates:  # save intermediate wavefront, summed for polychromatic if needed
-                intermediate_wfs.append(wavefront.copy())
-            if display_intermediates:
-                wavefront._display_after_optic(optic, default_nplanes=len(self))
+            # if return_intermediates:  # save intermediate wavefront, summed for polychromatic if needed
+            #     intermediate_wfs.append(wavefront.copy())
+            # if display_intermediates:
+            #     wavefront._display_after_optic(optic, default_nplanes=len(self))
 
         if return_intermediates:
             return wavefront, intermediate_wfs
@@ -2167,7 +2172,7 @@ class CompoundOpticalSystem(OpticalSystem):
         # helper function for logging:
         def loghistory(wavefront, msg):
             _log.debug(msg)
-            wavefront.history.append(msg)
+            # wavefront.history.append(msg)
 
         for i, optsys in enumerate(self.optsyslist):
             # If necessary, convert wavefront type.
@@ -2377,7 +2382,8 @@ class OpticalElement(object):
             if accel_math._USE_NUMEXPR:
                 trans = self.get_transmission(wave)
                 opd = self.get_opd(wave)
-                self.phasor = ne.evaluate("trans * exp(1.j * opd * scale)")
+                self.phasor = trans*np.exp(1.j*opd*scale)
+                # self.phasor = ne.evaluate("trans * exp(1.j * opd * scale)")
             else:
                 self.phasor = self.get_transmission(wave) * np.exp(1.j * self.get_opd(wave) * scale)
 
@@ -3174,12 +3180,12 @@ class Detector(OpticalElement):
         if fov_pixels is None and fov_arcsec is None:
             raise ValueError("Either fov_pixels or fov_arcsec must be specified!")
         elif fov_pixels is not None:
-            self.fov_pixels = onp.round(fov_pixels)
+            self.fov_pixels = np.round(fov_pixels)
             self.fov_arcsec = self.fov_pixels * self.pixelscale
         else:
             # set field of view to closest value possible to requested,
             # consistent with having an integer number of pixels
-            self.fov_pixels = onp.round((fov_arcsec / self.pixelscale))
+            self.fov_pixels = np.round((fov_arcsec / self.pixelscale))
             self.fov_arcsec = self.fov_pixels * self.pixelscale
         if np.any(self.fov_pixels <= 0):
             raise ValueError("FOV in pixels must be a positive quantity. Invalid: " + str(self.fov_pixels))
