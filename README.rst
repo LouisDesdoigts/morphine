@@ -1,4 +1,6 @@
 ============================================
+morphine - derivatives from
+
 POPPY: Physical Optics Propagation in Python
 ============================================
 
@@ -25,13 +27,6 @@ POPPY was developed as part of a simulation package for the James Webb Space Tel
 
 For documentation, see http://poppy-optics.readthedocs.io/
 
-Code by Marshall Perrin, Joseph Long, Ewan Douglas, Neil Zimmerman, Anand Sivaramakrishnan, Shannon Osborne, Kyle Douglass, Maciek Grochowicz, Phillip Springer, & Ted Corcovilos, with additional contributions from Remi Soummer, Kyle Van Gorkom, Jonathan Fraine, Christine Slocum, Roman Yurchak, and others on the Astropy team.
+morphine hacks by Benjamin Pope.
 
-Projects using POPPY
---------------------
-
-POPPY provides the optical modeling framework used in:
-
-* WebbPSF, a PSF simulator for NASA's JWST and WFIRST space telescopes. See https://pypi.python.org/pypi/webbpsf
-* ``gpipsfs``, a PSF simulator for the Gemini Planet Imager coronagraph. See https://github.com/geminiplanetimager/gpipsfs 
-
+POPPY code by Marshall Perrin, Joseph Long, Ewan Douglas, Neil Zimmerman, Anand Sivaramakrishnan, Shannon Osborne, Kyle Douglass, Maciek Grochowicz, Phillip Springer, & Ted Corcovilos, with additional contributions from Remi Soummer, Kyle Van Gorkom, Jonathan Fraine, Christine Slocum, Roman Yurchak, and others on the Astropy team.
