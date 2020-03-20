@@ -168,7 +168,7 @@ class BaseWavefront(ABC):
         if isinstance(optic, CoordinateTransform):
             return self  # a coord transform doesn't actually affect the wavefront via multiplication,
             # but instead via forcing a call to rotate() or invert() in propagate_to...
-        elif np.size(optic) == 1:
+        elif np.isscalar(optic):
             self.wavefront *= optic  # it's just a scalar
             # self.history.append("Multiplied WF by scalar value " + str(optic))
             return self
@@ -182,7 +182,7 @@ class BaseWavefront(ABC):
 
         phasor = optic.get_phasor(self)
 
-        if not np.size(phasor)==1 and phasor.size > 1:
+        if not np.isscalar(phasor) and phasor.size > 1:
             assert self.wavefront.shape == phasor.shape, "Phasor shape {} does not match wavefront shape {}".format(
                 phasor.shape, self.wavefront.shape)
 
@@ -295,7 +295,7 @@ class BaseWavefront(ABC):
             outfits[0].header['PIXELSCL'] = (self.pixelscale,
                                              'Scale in arcsec/pix (after oversampling)')
             fov_arcsec = self.fov*arcsec2rad
-            if np.size(fov_arcsec) == 1:
+            if np.isscalar(fov_arcsec):
                 outfits[0].header['FOV'] = (fov_arcsec, 'Field of view in arcsec (full array)')
             else:
                 outfits[0].header['FOV_X'] = (fov_arcsec[1], 'Field of view in arcsec (full array), X direction')
@@ -1153,7 +1153,7 @@ class Wavefront(BaseWavefront):
         """
         y, x = onp.indices(shape, dtype=_float())
         pixelscale_mpix = pixelscale
-        if not np.size(pixelscale_mpix) == 1:
+        if not np.isscalar(pixelscale_mpix):
             pixel_scale_x, pixel_scale_y = pixelscale_mpix
         else:
             pixel_scale_x, pixel_scale_y = pixelscale_mpix, pixelscale_mpix
@@ -1191,7 +1191,7 @@ class Wavefront(BaseWavefront):
         """
         y, x = onp.indices(shape, dtype=_float())
         pixelscale_arcsecperpix = pixelscale
-        if not np.size(pixelscale_arcsecperpix) == 1:
+        if not np.isscalar(pixelscale_arcsecperpix):
             pixel_scale_x, pixel_scale_y = pixelscale_arcsecperpix
         else:
             pixel_scale_x, pixel_scale_y = pixelscale_arcsecperpix, pixelscale_arcsecperpix
@@ -1486,7 +1486,7 @@ class BaseOpticalSystem(ABC):
         # ensure wavelength is a quantity which is iterable:
         # (the check for a quantity of type length is applied in the decorator)
         if np.size(wavelength) == 1:
-            wavelength = np.asarray([wavelength], dtype=_float()) * wavelength.unit
+            wavelength = np.asarray([wavelength], dtype=_float())
 
         if weight is None:
             weight = [1.0] * len(wavelength)

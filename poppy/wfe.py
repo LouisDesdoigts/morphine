@@ -247,7 +247,8 @@ class ZernikeWFE(WavefrontError):
                     noll_normalize=True
                 )
 
-        combined_zernikes[aperture_intensity==0] = 0
+        index_update(combined_zernikes,aperture_intensity==0,0) 
+        # combined_zernikes[aperture_intensity==0] = 0
         return combined_zernikes
 
 
