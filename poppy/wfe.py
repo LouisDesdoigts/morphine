@@ -13,8 +13,7 @@ error in an OpticalSystem
 
 import collections
 from functools import wraps
-import numpy as np
-import astropy.units as u
+import jax.numpy as np
 
 from .optics import AnalyticOpticalElement, CircularAperture
 from .poppy_core import Wavefront, PlaneType, BaseWavefront
@@ -141,8 +140,7 @@ class ParameterizedWFE(WavefrontError):
         `zernike.hexike_basis`.)
     """
 
-    @utils.quantity_input(coefficients=u.meter, radius=u.meter)
-    def __init__(self, name="Parameterized Distortion", coefficients=None, radius=1*u.meter,
+    def __init__(self, name="Parameterized Distortion", coefficients=None, radius=1,
                  basis_factory=None, **kwargs):
         if not isinstance(basis_factory, collections.Callable):
             raise ValueError("'basis_factory' must be a callable that can "
@@ -156,7 +154,7 @@ class ParameterizedWFE(WavefrontError):
     @_check_wavefront_arg
     def get_opd(self, wave):
         y, x = self.get_coordinates(wave)
-        rho, theta = _wave_y_x_to_rho_theta(y, x, self.radius.to(u.meter).value)
+        rho, theta = _wave_y_x_to_rho_theta(y, x, self.radius)
 
         combined_distortion = np.zeros(rho.shape)
 
@@ -166,7 +164,7 @@ class ParameterizedWFE(WavefrontError):
         for idx, coefficient in enumerate(self.coefficients):
             if coefficient == 0.0:
                 continue  # save the trouble of a multiply-and-add of zeros
-            coefficient_in_m = coefficient.to(u.meter).value
+            coefficient_in_m = coefficient
             combined_distortion += coefficient_in_m * computed_terms[idx]
         return combined_distortion
 
@@ -188,7 +186,6 @@ class ZernikeWFE(WavefrontError):
         computed such that rho = 1 at r = `radius`.
     """
 
-    @utils.quantity_input(coefficients=u.meter, radius=u.meter)
     def __init__(self, name="Zernike WFE", coefficients=None, radius=None,
             aperture_stop=False, **kwargs):
 
@@ -218,7 +215,7 @@ class ZernikeWFE(WavefrontError):
         # implicitly also a circular aperture:
         aperture_intensity = self.circular_aperture.get_transmission(wave)
 
-        pixelscale_m = wave.pixelscale.to(u.meter / u.pixel).value
+        pixelscale_m = wave.pixelscale
 
         # whether we can use pre-cached zernikes for speed depends on whether
         # there are any coord offsets. See #229
@@ -226,11 +223,11 @@ class ZernikeWFE(WavefrontError):
                              or hasattr(self, "rotation"))
         if has_offset_coords:
             y, x = self.get_coordinates(wave)
-            rho, theta = _wave_y_x_to_rho_theta(y, x, self.radius.to(u.meter).value)
+            rho, theta = _wave_y_x_to_rho_theta(y, x, self.radius)
 
         combined_zernikes = np.zeros(wave.shape, dtype=np.float64)
         for j, k in enumerate(self.coefficients, start=1):
-            k_in_m = k.to(u.meter).value
+            k_in_m = k
 
             if has_offset_coords:
                 combined_zernikes += k_in_m * zernike.zernike1(
@@ -245,7 +242,7 @@ class ZernikeWFE(WavefrontError):
                     j,
                     wave.shape,
                     pixelscale_m,
-                    self.radius.to(u.meter).value,
+                    self.radius,
                     outside=0.0,
                     noll_normalize=True
                 )
@@ -276,7 +273,6 @@ class SineWaveWFE(WavefrontError):
     because that would risk potential ambiguity with the wavelength of light.)
     """
 
-    @utils.quantity_input(spatialfreq=1. / u.meter, amplitude=u.meter)
     def __init__(self, name='Sine WFE', spatialfreq=1.0, amplitude=1e-6, phaseoffset=0, **kwargs):
         super(WavefrontError, self).__init__(name=name, **kwargs)
 
@@ -298,8 +294,8 @@ class SineWaveWFE(WavefrontError):
 
         y, x = self.get_coordinates(wave)  # in meters
 
-        opd = self.sine_amplitude.to(u.meter).value * \
-              np.sin(2 * np.pi * (x * self.sine_spatial_freq.to(1 / u.meter).value + self.sine_phase_offset))
+        opd = self.sine_amplitude * \
+              np.sin(2 * np.pi * (x * self.sine_spatial_freq.to(1).value + self.sine_phase_offset))
 
         return opd
 
@@ -322,8 +318,7 @@ class StatisticalPSDWFE(WavefrontError):
         seed for the random phase screen generator
     """
 
-    @utils.quantity_input(wfe=u.nm, radius=u.meter)
-    def __init__(self, name='PSD WFE', index=3.0, wfe=50*u.nm, radius=1*u.meter, seed=None, **kwargs):
+    def __init__(self, name='PSD WFE', index=3.0, wfe=50e-9, radius=1, seed=None, **kwargs):
 
         super().__init__(name=name, **kwargs)
         self.index = index
@@ -342,7 +337,7 @@ class StatisticalPSDWFE(WavefrontError):
             for a temporary Wavefront used to compute the OPD.
         """
         y, x = self.get_coordinates(wave)
-        rho, theta = _wave_y_x_to_rho_theta(y, x, self.radius.to(u.meter).value)
+        rho, theta = _wave_y_x_to_rho_theta(y, x, self.radius)
         psd = np.power(rho, -self.index)   # generate power-law PSD
 
         np.random.seed(self.seed)   # if provided, set a seed for random number generator
@@ -352,6 +347,6 @@ class StatisticalPSDWFE(WavefrontError):
         phase_screen = np.fft.ifftshift(np.fft.ifft2(np.fft.ifftshift(scaled))).real   # FT of scaled random PSD makes phase screen
 
         phase_screen -= np.mean(phase_screen)  # force zero-mean
-        opd = phase_screen / np.std(phase_screen) * self.wfe.to(u.m).value  # normalize to wanted input rms wfe
+        opd = phase_screen / np.std(phase_screen) * self.wfe  # normalize to wanted input rms wfe
 
         return opd

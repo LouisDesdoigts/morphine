@@ -168,7 +168,7 @@ class BaseWavefront(ABC):
         if isinstance(optic, CoordinateTransform):
             return self  # a coord transform doesn't actually affect the wavefront via multiplication,
             # but instead via forcing a call to rotate() or invert() in propagate_to...
-        elif np.isscalar(optic):
+        elif np.size(optic) == 1:
             self.wavefront *= optic  # it's just a scalar
             # self.history.append("Multiplied WF by scalar value " + str(optic))
             return self
@@ -182,7 +182,7 @@ class BaseWavefront(ABC):
 
         phasor = optic.get_phasor(self)
 
-        if not np.isscalar(phasor) and phasor.size > 1:
+        if not np.size(phasor)==1 and phasor.size > 1:
             assert self.wavefront.shape == phasor.shape, "Phasor shape {} does not match wavefront shape {}".format(
                 phasor.shape, self.wavefront.shape)
 
@@ -295,7 +295,7 @@ class BaseWavefront(ABC):
             outfits[0].header['PIXELSCL'] = (self.pixelscale,
                                              'Scale in arcsec/pix (after oversampling)')
             fov_arcsec = self.fov*arcsec2rad
-            if np.isscalar(fov_arcsec):
+            if np.size(fov_arcsec) == 1:
                 outfits[0].header['FOV'] = (fov_arcsec, 'Field of view in arcsec (full array)')
             else:
                 outfits[0].header['FOV_X'] = (fov_arcsec[1], 'Field of view in arcsec (full array), X direction')
@@ -953,6 +953,7 @@ class Wavefront(BaseWavefront):
 
         self.current_plane_index += 1
 
+
     # def _propagate_fft(self, optic):
     #     """ Propagate from pupil to image or vice versa using a padded FFT
 
@@ -1115,9 +1116,9 @@ class Wavefront(BaseWavefront):
         mft = MatrixFourierTransform(centering='ADJUSTABLE', verbose=False)
 
         # these can be either scalar or 2-element lists/tuples/ndarrays
-        msg_pixscale = ('{0:.4f}'.format(self.pixelscale) if np.isscalar(self.pixelscale) else
+        msg_pixscale = ('{0:.4f}'.format(self.pixelscale) if np.size(self.pixelscale) == 1 else
                         '{0:.4f} x {1:.4f} arcsec/pix'.format(self.pixelscale[0], self.pixelscale[1]))
-        msg_det_fov = ('{0:.4f} lam/D'.format(det_fov_lam_d) if np.isscalar(det_fov_lam_d) else
+        msg_det_fov = ('{0:.4f} lam/D'.format(det_fov_lam_d) if np.size(det_fov_lam_d) == 1 else
                        '{0:.4f} x {1:.4f}  lam/D'.format(det_fov_lam_d[0], det_fov_lam_d[1]))
 
         msg = '    Propagating w/ InvMFT:  scale={0}    fov={1}    npix={2:d} x {2:d}'.format(
@@ -1152,7 +1153,7 @@ class Wavefront(BaseWavefront):
         """
         y, x = onp.indices(shape, dtype=_float())
         pixelscale_mpix = pixelscale
-        if not np.isscalar(pixelscale_mpix):
+        if not np.size(pixelscale_mpix) == 1:
             pixel_scale_x, pixel_scale_y = pixelscale_mpix
         else:
             pixel_scale_x, pixel_scale_y = pixelscale_mpix, pixelscale_mpix
@@ -1190,7 +1191,7 @@ class Wavefront(BaseWavefront):
         """
         y, x = onp.indices(shape, dtype=_float())
         pixelscale_arcsecperpix = pixelscale
-        if not np.isscalar(pixelscale_arcsecperpix):
+        if not np.size(pixelscale_arcsecperpix) == 1:
             pixel_scale_x, pixel_scale_y = pixelscale_arcsecperpix
         else:
             pixel_scale_x, pixel_scale_y = pixelscale_arcsecperpix, pixelscale_arcsecperpix
@@ -1484,7 +1485,7 @@ class BaseOpticalSystem(ABC):
 
         # ensure wavelength is a quantity which is iterable:
         # (the check for a quantity of type length is applied in the decorator)
-        if np.isscalar(wavelength):
+        if np.size(wavelength) == 1:
             wavelength = np.asarray([wavelength], dtype=_float()) * wavelength.unit
 
         if weight is None:
@@ -3203,7 +3204,7 @@ class Detector(OpticalElement):
     def shape(self):
         fpix = self.fov_pixels
         # have to cast back to int since Quantities are all float internally
-        return (int(fpix), int(fpix)) if np.isscalar(fpix) else fpix.astype(int)[0:2]
+        return (int(fpix), int(fpix)) if np.size(fpix) == 1 else fpix.astype(int)[0:2]
 
     def __str__(self):
         return "Detector plane: {} ({}x{} pixels, {:.3f})".format(self.name, self.shape[1], self.shape[0], self.pixelscale)

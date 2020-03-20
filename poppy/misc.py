@@ -4,7 +4,7 @@
 #
 ############################################################################
 
-import numpy as np
+import jax.numpy as np
 import scipy
 import matplotlib.pyplot as plt
 
