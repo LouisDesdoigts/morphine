@@ -11,9 +11,6 @@ TESTDIR = os.path.abspath(os.path.dirname(__file__))
 ddir = os.path.join(TESTDIR,'../data/')
 
 
-from .test_errorhandling import _exception_message_starts_with
-
-
 import logging
 _log = logging.getLogger('poppy_tests')
 
