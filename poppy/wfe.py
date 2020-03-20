@@ -14,6 +14,8 @@ error in an OpticalSystem
 import collections
 from functools import wraps
 import jax.numpy as np
+from jax.ops import index_update
+
 
 from .optics import AnalyticOpticalElement, CircularAperture
 from .poppy_core import Wavefront, PlaneType, BaseWavefront
