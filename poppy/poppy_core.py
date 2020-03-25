@@ -1495,160 +1495,161 @@ class BaseOpticalSystem(ABC):
             raise ValueError("Input source has different number of weights and wavelengths...")
 
         # loop over wavelengths
-        if self.verbose:
-            _log.info("Calculating PSF with %d wavelengths" % (len(wavelength)))
+        # if self.verbose:
+        #     _log.info("Calculating PSF with %d wavelengths" % (len(wavelength)))
         outfits = None
         intermediate_wfs = None
         if save_intermediates or return_intermediates:
-            _log.info("User requested saving intermediate wavefronts in call to poppy.calc_psf")
+            # _log.info("User requested saving intermediate wavefronts in call to poppy.calc_psf")
             retain_intermediates = True
         else:
             retain_intermediates = False
 
-        normwts = np.asarray(weight, dtype=_float())
+        normwts = 1.0*np.asarray(weight)
         normwts /= normwts.sum()
 
-        _USE_FFTW = (conf.use_fftw and accel_math._FFTW_AVAILABLE)
-        if _USE_FFTW:
-            utils.fftw_load_wisdom()
+        # _USE_FFTW = (conf.use_fftw and accel_math._FFTW_AVAILABLE)
+        # if _USE_FFTW:
+        #     utils.fftw_load_wisdom()
 
-        if conf.use_multiprocessing and len(wavelength) > 1:  # ######## Parallellized computation ############
-            # Avoid a Mac OS incompatibility that can lead to hard-to-reproduce crashes.
-            # see issues #23 and #176
+        # if conf.use_multiprocessing and len(wavelength) > 1:  # ######## Parallellized computation ############
+        #     # Avoid a Mac OS incompatibility that can lead to hard-to-reproduce crashes.
+        #     # see issues #23 and #176
 
-            if _USE_FFTW:
-                _log.warning('IMPORTANT WARNING: Python multiprocessing and fftw3 do not appear to play well together. '
-                             'This may crash intermittently')
-                _log.warning('   We suggest you set poppy.conf.use_fftw to False if you want to use multiprocessing().')
-            if display:
-                _log.warning('Display during calculations is not supported for multiprocessing mode. '
-                             'Please set poppy.conf.use_multiprocessing = False if you want to use display=True.')
-                _log.warning('(Plot the returned PSF with poppy.utils.display_psf.)')
+        #     if _USE_FFTW:
+        #         _log.warning('IMPORTANT WARNING: Python multiprocessing and fftw3 do not appear to play well together. '
+        #                      'This may crash intermittently')
+        #         _log.warning('   We suggest you set poppy.conf.use_fftw to False if you want to use multiprocessing().')
+        #     if display:
+        #         _log.warning('Display during calculations is not supported for multiprocessing mode. '
+        #                      'Please set poppy.conf.use_multiprocessing = False if you want to use display=True.')
+        #         _log.warning('(Plot the returned PSF with poppy.utils.display_psf.)')
 
-            if return_intermediates:
-                _log.warning('Memory usage warning: When preserving intermediate  planes in multiprocessing mode, '
-                             'memory usage scales with the number of planes times number of wavelengths. Disable '
-                             'use_multiprocessing if you are running out of memory.')
-            if save_intermediates:
-                _log.warning('Saving intermediate steps does not take advantage of multiprocess parallelism. '
-                             'Set save_intermediates=False for improved speed.')
+        #     if return_intermediates:
+        #         _log.warning('Memory usage warning: When preserving intermediate  planes in multiprocessing mode, '
+        #                      'memory usage scales with the number of planes times number of wavelengths. Disable '
+        #                      'use_multiprocessing if you are running out of memory.')
+        #     if save_intermediates:
+        #         _log.warning('Saving intermediate steps does not take advantage of multiprocess parallelism. '
+        #                      'Set save_intermediates=False for improved speed.')
 
-            # do *NOT* just blindly try to create as many processes as one has CPUs, or one per wavelength either
-            # This is a memory-intensive task so that can end up swapping to disk and thrashing IO
-            nproc = conf.n_processes if conf.n_processes > 1 \
-                else utils.estimate_optimal_nprocesses(self, nwavelengths=len(wavelength))
-            nproc = min(nproc, len(wavelength))  # never try more processes than wavelengths.
-            # be sure to cast nproc to int below; will fail if given a float even if of integer value
+        #     # do *NOT* just blindly try to create as many processes as one has CPUs, or one per wavelength either
+        #     # This is a memory-intensive task so that can end up swapping to disk and thrashing IO
+        #     nproc = conf.n_processes if conf.n_processes > 1 \
+        #         else utils.estimate_optimal_nprocesses(self, nwavelengths=len(wavelength))
+        #     nproc = min(nproc, len(wavelength))  # never try more processes than wavelengths.
+        #     # be sure to cast nproc to int below; will fail if given a float even if of integer value
 
-            # Use forkserver method (requires Python >= 3.4) for more robustness, instead of just Pool
-            # Resolves https://github.com/mperrin/poppy/issues/23
-            ctx = multiprocessing.get_context('forkserver')
-            pool = ctx.Pool(int(nproc))
+        #     # Use forkserver method (requires Python >= 3.4) for more robustness, instead of just Pool
+        #     # Resolves https://github.com/mperrin/poppy/issues/23
+        #     ctx = multiprocessing.get_context('forkserver')
+        #     pool = ctx.Pool(int(nproc))
 
-            # build a single iterable containing the required function arguments
-            _log.info("Beginning multiprocessor job using {0} processes".format(nproc))
-            worker_arguments = [(self, wlen, retain_intermediates, return_final, normalize, _USE_FFTW)
-                                for wlen in wavelength]
-            results = pool.map(_wrap_propagate_for_multiprocessing, worker_arguments)
-            _log.info("Finished multiprocessor job")
-            pool.close()
+        #     # build a single iterable containing the required function arguments
+        #     _log.info("Beginning multiprocessor job using {0} processes".format(nproc))
+        #     worker_arguments = [(self, wlen, retain_intermediates, return_final, normalize, _USE_FFTW)
+        #                         for wlen in wavelength]
+        #     results = pool.map(_wrap_propagate_for_multiprocessing, worker_arguments)
+        #     _log.info("Finished multiprocessor job")
+        #     pool.close()
 
-            # Sum all the results up into one array, using the weights
-            outfits, intermediate_wfs = results[0]
-            outfits[0].data *= normwts[0]
-            for idx, wavefront in enumerate(intermediate_wfs):
-                intermediate_wfs[idx] *= normwts[0]
-            _log.info("got results for wavelength channel {} / {} ({:g} meters)".format(
-                0, len(tuple(wavelength)), wavelength[0]))
-            for i in range(1, len(normwts)):
-                mono_psf, mono_intermediate_wfs = results[i]
-                wave_weight = normwts[i]
-                _log.info("got results for wavelength channel {} / {} ({:g} meters)".format(
-                    i, len(tuple(wavelength)), wavelength[i]))
-                outfits[0].data += mono_psf[0].data * wave_weight
+        #     # Sum all the results up into one array, using the weights
+        #     outfits, intermediate_wfs = results[0]
+        #     outfits[0].data *= normwts[0]
+        #     for idx, wavefront in enumerate(intermediate_wfs):
+        #         intermediate_wfs[idx] *= normwts[0]
+        #     _log.info("got results for wavelength channel {} / {} ({:g} meters)".format(
+        #         0, len(tuple(wavelength)), wavelength[0]))
+        #     for i in range(1, len(normwts)):
+        #         mono_psf, mono_intermediate_wfs = results[i]
+        #         wave_weight = normwts[i]
+        #         _log.info("got results for wavelength channel {} / {} ({:g} meters)".format(
+        #             i, len(tuple(wavelength)), wavelength[i]))
+        #         outfits[0].data += mono_psf[0].data * wave_weight
+        #         for idx, wavefront in enumerate(mono_intermediate_wfs):
+        #             intermediate_wfs[idx] += wavefront * wave_weight
+        #     outfits[0].header.add_history("Multiwavelength PSF calc using {} processes completed.".format(nproc))
+
+        # else:  # ######### single-threaded computations (may still use multi cores if FFTW enabled ######
+        if display:
+            plt.clf()
+        poly_psf = None
+        for wlen, wave_weight in zip(wavelength, normwts):
+            mono_psf, mono_intermediate_wfs = self.propagate_mono(
+                wlen,
+                retain_intermediates=retain_intermediates,
+                retain_final=return_final,
+                display_intermediates=display_intermediates,
+                normalize=normalize
+            )
+
+            if poly_psf is None:
+                # for the first wavelength processed, set up the arrays where we accumulate the output
+                poly_psf = mono_psf
+                poly_psf *= wave_weight
+                intermediate_wfs = mono_intermediate_wfs
+                for wavefront in intermediate_wfs:
+                    wavefront *= wave_weight  # modifies Wavefront in-place
+            else:
+                # for subsequent wavelengths, scale and add the data to the existing arrays
+                poly_psf += mono_psf * wave_weight
                 for idx, wavefront in enumerate(mono_intermediate_wfs):
                     intermediate_wfs[idx] += wavefront * wave_weight
-            outfits[0].header.add_history("Multiwavelength PSF calc using {} processes completed.".format(nproc))
 
-        else:  # ######### single-threaded computations (may still use multi cores if FFTW enabled ######
-            if display:
-                plt.clf()
-            for wlen, wave_weight in zip(wavelength, normwts):
-                mono_psf, mono_intermediate_wfs = self.propagate_mono(
-                    wlen,
-                    retain_intermediates=retain_intermediates,
-                    retain_final=return_final,
-                    display_intermediates=display_intermediates,
-                    normalize=normalize
-                )
+        # Display WF if requested.
+        #  Note - don't need to display here if we are showing all steps already
+        # if display and not display_intermediates:
+        #     cmap = getattr(matplotlib.cm, conf.cmap_sequential)
+        #     cmap.set_bad('0.3')
+        #     halffov_x = outfits[0].header['PIXELSCL'] * outfits[0].data.shape[1] / 2
+        #     halffov_y = outfits[0].header['PIXELSCL'] * outfits[0].data.shape[0] / 2
+        #     extent = [-halffov_x, halffov_x, -halffov_y, halffov_y]
+        #     unit = "arcsec"
+        #     vmax = outfits[0].data.max()
+        #     vmin = vmax / 1e4
+        #     norm = matplotlib.colors.LogNorm(vmin=vmin, vmax=vmax)  # vmin=1e-8,vmax=1e-1)
+        #     plt.xlabel(unit)
 
-                if outfits is None:
-                    # for the first wavelength processed, set up the arrays where we accumulate the output
-                    outfits = mono_psf
-                    outfits[0].data *= wave_weight
-                    intermediate_wfs = mono_intermediate_wfs
-                    for wavefront in intermediate_wfs:
-                        wavefront *= wave_weight  # modifies Wavefront in-place
-                else:
-                    # for subsequent wavelengths, scale and add the data to the existing arrays
-                    outfits[0].data += mono_psf[0].data * wave_weight
-                    for idx, wavefront in enumerate(mono_intermediate_wfs):
-                        intermediate_wfs[idx] += wavefront * wave_weight
+        #     utils.imshow_with_mouseover(outfits[0].data, extent=extent, norm=norm, cmap=cmap,
+        #                                 origin='lower')
 
-            # Display WF if requested.
-            #  Note - don't need to display here if we are showing all steps already
-            if display and not display_intermediates:
-                cmap = getattr(matplotlib.cm, conf.cmap_sequential)
-                cmap.set_bad('0.3')
-                halffov_x = outfits[0].header['PIXELSCL'] * outfits[0].data.shape[1] / 2
-                halffov_y = outfits[0].header['PIXELSCL'] * outfits[0].data.shape[0] / 2
-                extent = [-halffov_x, halffov_x, -halffov_y, halffov_y]
-                unit = "arcsec"
-                vmax = outfits[0].data.max()
-                vmin = vmax / 1e4
-                norm = matplotlib.colors.LogNorm(vmin=vmin, vmax=vmax)  # vmin=1e-8,vmax=1e-1)
-                plt.xlabel(unit)
+        # if save_intermediates:
+        #     _log.info('Saving intermediate wavefronts:')
+        #     for idx, wavefront in enumerate(intermediate_wfs):
+        #         filename = 'wavefront_plane_{:03d}.fits'.format(idx)
+        #         wavefront.writeto(filename, what=save_intermediates_what)
+        #         _log.info('  saved {} to {} ({} / {})'.format(save_intermediates_what, filename,
+        #                                                       idx, len(intermediate_wfs)))
 
-                utils.imshow_with_mouseover(outfits[0].data, extent=extent, norm=norm, cmap=cmap,
-                                            origin='lower')
+        # tstop = time.time()
+        # tdelta = tstop - tstart
+        # _log.info("  Calculation completed in {0:.3f} s".format(tdelta))
+        # outfits[0].header.add_history("Calculation completed in {0:.3f} seconds".format(tdelta))
 
-        if save_intermediates:
-            _log.info('Saving intermediate wavefronts:')
-            for idx, wavefront in enumerate(intermediate_wfs):
-                filename = 'wavefront_plane_{:03d}.fits'.format(idx)
-                wavefront.writeto(filename, what=save_intermediates_what)
-                _log.info('  saved {} to {} ({} / {})'.format(save_intermediates_what, filename,
-                                                              idx, len(intermediate_wfs)))
+        # # if _USE_FFTW and conf.autosave_fftw_wisdom:
+        # #     utils.fftw_save_wisdom()
 
-        tstop = time.time()
-        tdelta = tstop - tstart
-        _log.info("  Calculation completed in {0:.3f} s".format(tdelta))
-        outfits[0].header.add_history("Calculation completed in {0:.3f} seconds".format(tdelta))
+        # # TODO update FITS header for oversampling here if detector is different from regular?
+        # waves = np.asarray(wavelength)
+        # wts = np.asarray(weight)
+        # mnwave = (waves * wts).sum() / wts.sum()
+        # outfits[0].header['WAVELEN'] = (mnwave, 'Weighted mean wavelength in meters')
+        # outfits[0].header['NWAVES'] = (waves.size, 'Number of wavelengths used in calculation')
+        # for i in range(waves.size):
+        #     outfits[0].header['WAVE' + str(i)] = (waves[i], "Wavelength " + str(i))
+        #     outfits[0].header['WGHT' + str(i)] = (wts[i], "Wavelength weight " + str(i))
+        # ffttype = "pyFFTW" if _USE_FFTW else "numpy.fft"
+        # outfits[0].header['FFTTYPE'] = (ffttype, 'Algorithm for FFTs: numpy or fftw')
+        # outfits[0].header['NORMALIZ'] = (normalize, 'PSF normalization method')
 
-        if _USE_FFTW and conf.autosave_fftw_wisdom:
-            utils.fftw_save_wisdom()
-
-        # TODO update FITS header for oversampling here if detector is different from regular?
-        waves = np.asarray(wavelength)
-        wts = np.asarray(weight)
-        mnwave = (waves * wts).sum() / wts.sum()
-        outfits[0].header['WAVELEN'] = (mnwave, 'Weighted mean wavelength in meters')
-        outfits[0].header['NWAVES'] = (waves.size, 'Number of wavelengths used in calculation')
-        for i in range(waves.size):
-            outfits[0].header['WAVE' + str(i)] = (waves[i], "Wavelength " + str(i))
-            outfits[0].header['WGHT' + str(i)] = (wts[i], "Wavelength weight " + str(i))
-        ffttype = "pyFFTW" if _USE_FFTW else "numpy.fft"
-        outfits[0].header['FFTTYPE'] = (ffttype, 'Algorithm for FFTs: numpy or fftw')
-        outfits[0].header['NORMALIZ'] = (normalize, 'PSF normalization method')
-
-        if self.verbose:
-            _log.info("PSF Calculation completed.")
+        # if self.verbose:
+        #     _log.info("PSF Calculation completed.")
 
         if return_intermediates | return_final:
-            return outfits, intermediate_wfs
+            return poly_psf, intermediate_wfs
 
         else:
-            return outfits
+            return poly_psf
 
     def propagate_mono(self,
                        wavelength=1e-6,

@@ -4,7 +4,6 @@ import platform
 import re
 import time
 import astropy.io.fits as fits
-import astropy.units as units
 import matplotlib.pyplot as plt
 import jax.numpy as np
 import scipy.interpolate
@@ -250,10 +249,10 @@ class Instrument(object):
                                               monochromatic=local_options['monochromatic'])
 
         # Validate that the calculation we're about to do makes sense with this instrument config
-        self._validate_config(wavelengths=wavelens)
+        # self._validate_config(wavelengths=wavelens)
         poppy_core._log.info(
             "PSF calc using fov_%s, oversample = %d, number of wavelengths = %d" % (
-                local_options['fov_spec'], local_options['detector_oversample'], len(wavelens)
+                local_options['fov_spec'], local_options['detector_oversample'], len(weights)
             )
         )
 
@@ -262,7 +261,7 @@ class Instrument(object):
         self.optsys = self._get_optical_system(fov_arcsec=fov_arcsec, fov_pixels=fov_pixels,
                                                fft_oversample=fft_oversample, detector_oversample=detector_oversample,
                                                options=local_options)
-        self._check_for_aliasing(wavelens)
+        # self._check_for_aliasing(wavelens)
         # and use it to compute the PSF (the real work happens here, in code in poppy.py)
         result = self.optsys.calc_psf(wavelens, weights, display_intermediates=display, display=display,
                                       save_intermediates=save_intermediates, return_intermediates=return_intermediates,
@@ -271,29 +270,29 @@ class Instrument(object):
         if return_intermediates:  # this implies we got handed back a tuple, so split it apart
             result, intermediates = result
 
-        self._apply_jitter(result,
-                           local_options)  # will immediately return if there is no jitter parameter in local_options
+        # result = self._apply_jitter(result,
+        #                    local_options)  # will immediately return if there is no jitter parameter in local_options
 
-        self._get_fits_header(result, local_options)
+        # self._get_fits_header(result, local_options)
 
-        self._calc_psf_format_output(result, local_options)
+        # self._calc_psf_format_output(result, local_options)
 
-        if display:
-            f = plt.gcf()
-            plt.suptitle("%s, filter= %s" % (self.name, self.filter), size='xx-large')
+        # if display:
+        #     f = plt.gcf()
+        #     plt.suptitle("%s, filter= %s" % (self.name, self.filter), size='xx-large')
 
-            if monochromatic is not None:
-                labeltext = "Monochromatic calculation at {:.3f} um".format(monochromatic * 1e6)
-            else:
-                labeltext = "Calculation with %d wavelengths (%g - %g um)" % (
-                    nlambda, wavelens[0] * 1e6, wavelens[-1] * 1e6)
-            plt.text(0.99, 0.04, labeltext,
-                     transform=f.transFigure, horizontalalignment='right')
+        #     if monochromatic is not None:
+        #         labeltext = "Monochromatic calculation at {:.3f} um".format(monochromatic * 1e6)
+        #     else:
+        #         labeltext = "Calculation with %d wavelengths (%g - %g um)" % (
+        #             nlambda, wavelens[0] * 1e6, wavelens[-1] * 1e6)
+        #     plt.text(0.99, 0.04, labeltext,
+        #              transform=f.transFigure, horizontalalignment='right')
 
-        if outfile is not None:
-            result[0].header["FILENAME"] = (os.path.basename(outfile), "Name of this file")
-            result.writeto(outfile, overwrite=overwrite)
-            poppy_core._log.info("Saved result to " + outfile)
+        # if outfile is not None:
+        #     result[0].header["FILENAME"] = (os.path.basename(outfile), "Name of this file")
+        #     result.writeto(outfile, overwrite=overwrite)
+        #     poppy_core._log.info("Saved result to " + outfile)
 
         if return_intermediates:
             return result, intermediates
@@ -641,9 +640,9 @@ class Instrument(object):
 
         # determine the spatial frequency which is Nyquist sampled by the input pupil.
         # convert this to units of cycles per meter and make it not a Quantity
-        sf = (1. / (self.optsys.planes[0].pixelscale * 2 * units.pixel)).to(1. / units.meter).value
+        sf = (1. / (self.optsys.planes[0].pixelscale * 2))
 
-        det_fov_arcsec = self.optsys.planes[-1].fov_arcsec.to(units.arcsec).value
+        det_fov_arcsec = self.optsys.planes[-1].fov_arcsec
         if np.isscalar(det_fov_arcsec):  # FOV can be scalar (square) or rectangular
             det_fov_arcsec = (det_fov_arcsec, det_fov_arcsec)
 
@@ -671,7 +670,7 @@ class Instrument(object):
         """
         return None
 
-    def _apply_jitter(self, result, local_options=None):
+    def _apply_jitter(self, psf, local_options=None):
         """ Modify a PSF to account for the blurring effects of image jitter.
         Parameter arguments are taken from the options dictionary.
 
@@ -692,9 +691,6 @@ class Instrument(object):
         """
         if local_options is None:
             local_options = self.options
-        if 'jitter' not in local_options:
-            result[0].header['JITRTYPE'] = ('None', 'Type of jitter applied')
-            return
 
         if conf.enable_speed_tests: t0 = time.time()
 
@@ -707,25 +703,27 @@ class Instrument(object):
 
             sigma = local_options.get('jitter_sigma')
             if sigma is None:
-                poppy_core._log.warning(
-                    "Gaussian jitter model requested, but no width for jitter distribution specified. " +
-                    "Assuming jitter_sigma = 0.007 arcsec by default")
+                # poppy_core._log.warning(
+                #     "Gaussian jitter model requested, but no width for jitter distribution specified. " +
+                #     "Assuming jitter_sigma = 0.007 arcsec by default")
                 sigma = 0.007
 
             # that will be in arcseconds, we need to convert to pixels:
 
-            poppy_core._log.info("Jitter: Convolving with Gaussian with sigma={0:.3f} arcsec".format(sigma))
-            out = scipy.ndimage.gaussian_filter(result[0].data, sigma / result[0].header['PIXELSCL'])
-            peak = result[0].data.max()
+            # poppy_core._log.info("Jitter: Convolving with Gaussian with sigma={0:.3f} arcsec".format(sigma))
+            out = scipy.ndimage.gaussian_filter(psf.amplitude, sigma / self.pixelscale)
+            peak = psf.amplitude.max()
             newpeak = out.max()
             strehl = newpeak / peak  # not really the whole Strehl ratio, just the part due to jitter
 
-            poppy_core._log.info("        resulting image peak drops to {0:.3f} of its previous value".format(strehl))
-            result[0].header['JITRTYPE'] = ('Gaussian convolution', 'Type of jitter applied')
-            result[0].header['JITRSIGM'] = (sigma, 'Gaussian sigma for jitter, per axis [arcsec]')
-            result[0].header['JITRSTRL'] = (strehl, 'Strehl reduction from jitter ')
+            # poppy_core._log.info("        resulting image peak drops to {0:.3f} of its previous value".format(strehl))
+            # result[0].header['JITRTYPE'] = ('Gaussian convolution', 'Type of jitter applied')
+            # result[0].header['JITRSIGM'] = (sigma, 'Gaussian sigma for jitter, per axis [arcsec]')
+            # result[0].header['JITRSTRL'] = (strehl, 'Strehl reduction from jitter ')
 
-            result[0].data = out
+            # result[0].data = out
+            psf.amplitude = out
+            return psf 
         else:
             raise ValueError('Unknown jitter option value: ' + local_options['jitter'])
 
@@ -749,7 +747,7 @@ class Instrument(object):
         # Trigger config validation to update any optical planes
         # (specifically auto-selected pupils based on filter selection)
         wavelengths, _ = self._get_weights(nlambda=1)
-        self._validate_config(wavelengths=wavelengths)
+        # self._validate_config(wavelengths=wavelengths)
         optsys = self._get_optical_system()
         optsys.display(what='both')
         if old_no_sam is not None:
@@ -849,65 +847,65 @@ class Instrument(object):
             poppy_core._log.info("Monochromatic calculation requested.")
             return (np.asarray([monochromatic]), np.asarray([1]))
 
-        elif _HAS_PYSYNPHOT and (isinstance(source, pysynphot.spectrum.SourceSpectrum) or source is None):
-            """ Given a pysynphot.SourceSpectrum object, perform synthetic photometry for
-            nlambda bins spanning the wavelength range of interest.
+        # elif _HAS_PYSYNPHOT and (isinstance(source, pysynphot.spectrum.SourceSpectrum) or source is None):
+        #     """ Given a pysynphot.SourceSpectrum object, perform synthetic photometry for
+        #     nlambda bins spanning the wavelength range of interest.
 
-            Because this calculation is kind of slow, cache results for reuse in the frequent
-            case where one is computing many PSFs for the same spectral source.
-            """
-            poppy_core._log.debug(
-                "Calculating spectral weights using pysynphot, nlambda=%d, source=%s" % (nlambda, str(source)))
-            if source is None:
-                source = pysynphot.BlackBody(5700)
-                poppy_core._log.info("No source spectrum supplied, therefore defaulting to 5700 K blackbody")
-            poppy_core._log.debug("Computing spectral weights for source = " + str(source))
+        #     Because this calculation is kind of slow, cache results for reuse in the frequent
+        #     case where one is computing many PSFs for the same spectral source.
+        #     """
+        #     poppy_core._log.debug(
+        #         "Calculating spectral weights using pysynphot, nlambda=%d, source=%s" % (nlambda, str(source)))
+        #     if source is None:
+        #         source = pysynphot.BlackBody(5700)
+        #         poppy_core._log.info("No source spectrum supplied, therefore defaulting to 5700 K blackbody")
+        #     poppy_core._log.debug("Computing spectral weights for source = " + str(source))
 
-            try:
-                key = self._get_spec_cache_key(source, nlambda)
-                if key in self._spectra_cache:
-                    poppy_core._log.debug("Previously computed spectral weights found in cache, just reusing those")
-                    return self._spectra_cache[key]
-            except KeyError:
-                pass  # in case sourcespectrum lacks a name element so the above lookup fails - just do the below calc.
+        #     try:
+        #         key = self._get_spec_cache_key(source, nlambda)
+        #         if key in self._spectra_cache:
+        #             poppy_core._log.debug("Previously computed spectral weights found in cache, just reusing those")
+        #             return self._spectra_cache[key]
+        #     except KeyError:
+        #         pass  # in case sourcespectrum lacks a name element so the above lookup fails - just do the below calc.
 
-            poppy_core._log.info("Computing wavelength weights using synthetic photometry for %s..." % self.filter)
-            band = self._get_synphot_bandpass(self.filter)
-            # choose reasonable min and max wavelengths
-            w_above10 = np.where(band.throughput > 0.10 * band.throughput.max())
+        #     poppy_core._log.info("Computing wavelength weights using synthetic photometry for %s..." % self.filter)
+        #     band = self._get_synphot_bandpass(self.filter)
+        #     # choose reasonable min and max wavelengths
+        #     w_above10 = np.where(band.throughput > 0.10 * band.throughput.max())
 
-            minwave = band.wave[w_above10].min()
-            maxwave = band.wave[w_above10].max()
-            poppy_core._log.debug("Min, max wavelengths = %f, %f" % (minwave / 1e4, maxwave / 1e4))
+        #     minwave = band.wave[w_above10].min()
+        #     maxwave = band.wave[w_above10].max()
+        #     poppy_core._log.debug("Min, max wavelengths = %f, %f" % (minwave / 1e4, maxwave / 1e4))
 
-            wave_bin_edges = np.linspace(minwave, maxwave, nlambda + 1)
-            wavesteps = (wave_bin_edges[:-1] + wave_bin_edges[1:]) / 2
-            deltawave = wave_bin_edges[1] - wave_bin_edges[0]
-            effstims = []
+        #     wave_bin_edges = np.linspace(minwave, maxwave, nlambda + 1)
+        #     wavesteps = (wave_bin_edges[:-1] + wave_bin_edges[1:]) / 2
+        #     deltawave = wave_bin_edges[1] - wave_bin_edges[0]
+        #     effstims = []
 
-            for wave in wavesteps:
-                poppy_core._log.debug(
-                    "Integrating across band centered at %.2f microns with width %.2f" % (wave / 1e4, deltawave / 1e4))
-                box = pysynphot.Box(wave, deltawave) * band
-                if box.throughput.max() == 0:
-                    # watch out for pathological cases with no overlap (happens with MIRI FND at high nlambda)
-                    result = 0.0
-                else:
-                    binset = np.linspace(wave - deltawave, wave + deltawave,
-                                         30)  # what wavelens to use when integrating across the sub-band?
-                    result = pysynphot.Observation(source, box, binset=binset).effstim('counts')
-                effstims.append(result)
+        #     for wave in wavesteps:
+        #         poppy_core._log.debug(
+        #             "Integrating across band centered at %.2f microns with width %.2f" % (wave / 1e4, deltawave / 1e4))
+        #         box = pysynphot.Box(wave, deltawave) * band
+        #         if box.throughput.max() == 0:
+        #             # watch out for pathological cases with no overlap (happens with MIRI FND at high nlambda)
+        #             result = 0.0
+        #         else:
+        #             binset = np.linspace(wave - deltawave, wave + deltawave,
+        #                                  30)  # what wavelens to use when integrating across the sub-band?
+        #             result = pysynphot.Observation(source, box, binset=binset).effstim('counts')
+        #         effstims.append(result)
 
-            effstims = np.array(effstims)
-            effstims /= effstims.sum()
-            wave_m = band.waveunits.Convert(wavesteps, 'm')  # convert to meters
+        #     effstims = np.array(effstims)
+        #     effstims /= effstims.sum()
+        #     wave_m = band.waveunits  # convert to meters
 
-            newsource = (wave_m, effstims)
-            if verbose:
-                _log.info(" Wavelengths and weights computed from pysynphot: " + str(newsource))
-            self._spectra_cache[self._get_spec_cache_key(source, nlambda)] = newsource
-            return newsource
-        elif isinstance(source, dict) and ('wavelengths' in source) and ('weights' in source):
+        #     newsource = (wave_m, effstims)
+        #     if verbose:
+        #         _log.info(" Wavelengths and weights computed from pysynphot: " + str(newsource))
+        #     self._spectra_cache[self._get_spec_cache_key(source, nlambda)] = newsource
+        #     return newsource
+        if isinstance(source, dict) and ('wavelengths' in source) and ('weights' in source):
             # Allow providing directly a set of specific weights and wavelengths, as in poppy.calc_psf source option #2
             return source['wavelengths'], source['weights']
         elif isinstance(source, tuple) and len(source) == 2:
