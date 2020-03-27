@@ -20,7 +20,7 @@ and run
 
 ## About morphine
 
-I wanted to simulate optics and use automatic differentiation to make derivatives - but do it in a style that will be familiar to most astronomers. So I hacked poppy to work with the (Google Jax)[https://github.com/google/jax] framework, an autodiff library that closely resembles NumPy. The important thing to remember is it doesn't like Astropy units, so we had to throw these all out - be careful! 
+I wanted to simulate optics and use automatic differentiation to make derivatives - but do it in a style that will be familiar to most astronomers. So I forked poppy to work with the (Google Jax)[https://github.com/google/jax] framework, an autodiff library that closely resembles NumPy. The important thing to remember is it doesn't like Astropy units, so we had to throw these all out - be careful! 
 
 ## About poppy
 
