@@ -13,14 +13,14 @@ import logging
 from . import utils
 from . import conf
 from . import accel_math
-from .poppy_core import OpticalElement, Wavefront, BaseWavefront, PlaneType, _RADIANStoARCSEC
+from .morphine_core import OpticalElement, Wavefront, BaseWavefront, PlaneType, _RADIANStoARCSEC
 from .accel_math import _exp, _r, _float, _complex
 from . import geometry
 
 if accel_math._USE_NUMEXPR:
     import numexpr as ne
 
-_log = logging.getLogger('poppy')
+_log = logging.getLogger('morphine')
 
 __all__ = ['AnalyticOpticalElement', 'ScalarTransmission', 'InverseTransmission',
            'BandLimitedCoron', 'BandLimitedCoronagraph', 'IdealFQPM', 'CircularPhaseMask', 'RectangularFieldStop', 'SquareFieldStop',
@@ -122,29 +122,29 @@ class AnalyticOpticalElement(OpticalElement):
             wavelength = wave
         scale = 2. * np.pi / wavelength
 
-        if accel_math._USE_NUMEXPR:
-            trans = self.get_transmission(wave)
-            opd = self.get_opd(wave)
-            # we first multiply the two scalars, for a slight performance gain
-            scalars = 1.j * scale
-            # warning, numexpr exp is crash-prone if fed complex64, so we
-            # leave the scalars variable as np.complex128 for reliability
-            result = trans*np.exp(opd*scalars)
-            # result = ne.evaluate("trans * exp( opd * scalars)")
+        # if accel_math._USE_NUMEXPR:
+        #     trans = self.get_transmission(wave)
+        #     opd = self.get_opd(wave)
+        #     # we first multiply the two scalars, for a slight performance gain
+        #     scalars = 1.j * scale
+        #     # warning, numexpr exp is crash-prone if fed complex64, so we
+        #     # leave the scalars variable as np.complex128 for reliability
+        #     result = trans*np.exp(opd*scalars)
+        #     # result = ne.evaluate("trans * exp( opd * scalars)")
 
-            # TODO if single-precision, need to cast the result back to that
-            # to work around a bug
-            # Not sure why numexpr is casting up to complex128
-            # see https://github.com/pydata/numexpr/issues/155
-            # (Yes this is inefficient to do math as doubles if in single mode, but
-            # numexpr is still a net win)
-            if conf.double_precision:
-                return result
-            else:
-                return np.asarray(result, _complex())
+        #     # TODO if single-precision, need to cast the result back to that
+        #     # to work around a bug
+        #     # Not sure why numexpr is casting up to complex128
+        #     # see https://github.com/pydata/numexpr/issues/155
+        #     # (Yes this is inefficient to do math as doubles if in single mode, but
+        #     # numexpr is still a net win)
+        #     if conf.double_precision:
+        #         return result
+        #     else:
+        #         return np.asarray(result, _complex())
 
-        else:
-            return self.get_transmission(wave) * np.exp(1.j * self.get_opd(wave) * scale)
+        # else:
+        return self.get_transmission(wave) * np.exp(1.j * self.get_opd(wave) * scale)
 
     def sample(self, wavelength=1e-6, npix=512, grid_size=None, what='amplitude',
                return_scale=False, phase_unit='waves'):
@@ -265,8 +265,8 @@ class AnalyticOpticalElement(OpticalElement):
         phdu = fits.PrimaryHDU(output_array)
         phdu.header['OPTIC'] = (self.name, "Descriptive name of this optic")
         phdu.header['NAME'] = self.name
-        phdu.header['SOURCE'] = 'Computed with POPPY'
-        phdu.header['VERSION'] = (version, "software version of POPPY")
+        phdu.header['SOURCE'] = 'Computed with morphine'
+        phdu.header['VERSION'] = (version, "software version of morphine")
         phdu.header['CONTENTS'] = (what, long_contents[what])
         phdu.header['PLANETYP'] = (self.planetype.value, "0=unspecified, 1=pupil, 2=image, 3=detector, 4=rot")
         if self.planetype == PlaneType.image:
@@ -344,8 +344,7 @@ class ScalarTransmission(AnalyticOpticalElement):
         self.wavefront_display_hint = 'intensity'
 
     def get_transmission(self, wave):
-        res = np.empty(wave.shape, dtype=_float())
-        res.fill(self.transmission)
+        res = self.transmission*np.ones(wave.shape)
         return res
 
 
@@ -427,9 +426,9 @@ class BandLimitedCoronagraph(AnalyticImagePlaneElement):
         self.kind = kind.lower()  # either circular or linear
         if self.kind in ['nircamwedge', 'nircamcircular']:
             import warnings
-            warnings.warn('JWST NIRCam specific functionality in poppy.BandLimitedCoron is moving to ' +
+            warnings.warn('JWST NIRCam specific functionality in morphine.BandLimitedCoron is moving to ' +
                           'webbpsf.NIRCam_BandLimitedCoron. The "nircamwedge" and "nircamcircular" options ' +
-                          'in poppy will be removed in a future version of poppy.', DeprecationWarning)
+                          'in morphine will be removed in a future version of morphine.', DeprecationWarning)
         elif self.kind not in self.allowable_kinds:
             raise ValueError("Invalid value for kind of BLC: " + self.kind)
         self.sigma = float(sigma)  # size parameter. See section 2.1 of Krist et al. SPIE 2007, 2009
@@ -519,7 +518,7 @@ class BandLimitedCoronagraph(AnalyticImagePlaneElement):
             # scalefact *= 2.2513
             # scalefact.shape = (1, x.shape[1])
             # This does not work - shape appears to be curved not linear.
-            # This is NOT a linear relationship. See calc_blc_wedge in test_poppy.
+            # This is NOT a linear relationship. See calc_blc_wedge in test_morphine.
 
             if np.abs(self.wavelength - 2.1e-6) < 0.1e-6:
                 polyfitcoeffs = np.array([2.01210737e-04, -7.18758337e-03, 1.12381516e-01,
@@ -1907,9 +1906,9 @@ def fixed_sampling_optic(optic, wavefront, oversample=2):
 
     Parameters
     ----------
-    optic : poppy.AnalyticOpticalElement
+    optic : morphine.AnalyticOpticalElement
         Some optical element
-    wave : poppy.Wavefront
+    wave : morphine.Wavefront
         A wavefront to define the desired sampling pixel size and number.
     oversample : int
         Subpixel sampling factor for "gray pixel" approximation: the optic will be
@@ -1917,11 +1916,11 @@ def fixed_sampling_optic(optic, wavefront, oversample=2):
 
     Returns
     -------
-    new_array_optic : poppy.ArrayOpticalElement
+    new_array_optic : morphine.ArrayOpticalElement
         A version ofthe input optic with fixed arrays for OPD and transmission.
 
     """
-    from .poppy_core import ArrayOpticalElement
+    from .morphine_core import ArrayOpticalElement
     npix = wavefront.shape[0]
     grid_size = npix*wavefront.pixelscale
     _log.debug("Converting {} to fixed sampling with grid_size={}, npix={}, oversample={}".format(

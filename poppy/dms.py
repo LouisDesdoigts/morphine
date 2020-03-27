@@ -8,11 +8,11 @@ import scipy.signal
 import astropy.io.fits as fits
 import astropy.units as u
 
-from . import utils, accel_math, poppy_core, optics
+from . import utils, accel_math, morphine_core, optics
 
 import logging
 
-_log = logging.getLogger('poppy')
+_log = logging.getLogger('morphine')
 
 if accel_math._USE_NUMEXPR:
     import numexpr as ne
@@ -75,7 +75,7 @@ class ContinuousDeformableMirror(optics.AnalyticOpticalElement):
                  **kwargs
                  ):
 
-        optics.AnalyticOpticalElement.__init__(self, planetype=poppy_core.PlaneType.pupil, **kwargs)
+        optics.AnalyticOpticalElement.__init__(self, planetype=morphine_core.PlaneType.pupil, **kwargs)
         self._dm_shape = dm_shape  # number of actuators
         self.name = name
         self._surface = np.zeros(dm_shape)  # array for the DM surface OPD, in meters
@@ -98,7 +98,7 @@ class ContinuousDeformableMirror(optics.AnalyticOpticalElement):
                                                                          # active area is 'inside the fenceposts'
         self.pupil_center = (dm_shape[0] - 1.) / 2  # center of clear aperture in actuator units
 
-        # the poppy-standard attribute 'pupil_diam' is used for default display or input wavefront sizes
+        # the morphine-standard attribute 'pupil_diam' is used for default display or input wavefront sizes
         self.pupil_diam = max(np.max(dm_shape) * self.actuator_spacing, self.radius_reflective*2)  # see note above
 
         self.include_actuator_print_through = include_actuator_print_through
@@ -731,7 +731,7 @@ class HexSegmentedDeformableMirror(optics.MultiHexagonAperture):
         self._seg_mask = self.transmission
         self._transmission = np.asarray(self._seg_mask != 0, dtype=float)
 
-        y, x = poppy_core.Wavefront.pupil_coordinates((npix, npix), pixelscale)
+        y, x = morphine_core.Wavefront.pupil_coordinates((npix, npix), pixelscale)
 
         for i in self.segmentlist:
             wseg = np.where(self._seg_mask == i+1)

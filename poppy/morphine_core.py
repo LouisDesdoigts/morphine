@@ -26,7 +26,7 @@ if accel_math._USE_NUMEXPR:
 
 import logging
 
-_log = logging.getLogger('poppy')
+_log = logging.getLogger('morphine')
 
 __all__ = ['Wavefront', 'OpticalSystem', 'CompoundOpticalSystem',
            'OpticalElement', 'ArrayOpticalElement', 'FITSOpticalElement', 'Rotation', 'Detector']
@@ -363,7 +363,7 @@ class BaseWavefront(ABC):
             For image planes in angular coordinates, this is given in units of
             arcseconds. The default is 5, so only the innermost 5x5 arcsecond
             region will be shown. This default may be changed in the
-            POPPY config file. If the image size is < 5 arcsec then the
+            morphine config file. If the image size is < 5 arcsec then the
             entire image is displayed.
             For planes in linear physical coordinates such as pupils, this
             is given in units of meters, and the default is no cropping
@@ -925,6 +925,7 @@ class Wavefront(BaseWavefront):
             # _log.debug(msg)
             # self.history.append(msg)
             pass
+        print('propagate_to Wavefront',self.planetype,'Optic:',optic.planetype)
 
         if optic.planetype == PlaneType.rotation:  # rotate
             self.rotate(optic.angle)
@@ -932,22 +933,25 @@ class Wavefront(BaseWavefront):
         elif optic.planetype == PlaneType.inversion:  # invert coordinates
             self.invert(axis=optic.axis)
             self.location = 'after ' + optic.name
-        elif ((optic.planetype == PlaneType.detector or getattr(optic, 'propagation_hint', None) == 'MFT')
+        elif ((optic.planetype == PlaneType.detector or optic.planetype == PlaneType.image or getattr(optic, 'propagation_hint', None) == 'MFT')
                 and self.planetype == PlaneType.pupil):  # from pupil to detector in image plane: use MFT
+            print('Using MFT')
             self._propagate_mft(optic)
-            self.location = 'before ' + optic.name
-        elif (optic.planetype == PlaneType.pupil and self.planetype == PlaneType.image and
-                self._last_transform_type == 'MFT'):
-            # inverse MFT detector to pupil
-            # n.b. transforming PlaneType.pupil -> PlaneType.detector results in self.planetype == PlaneType.image
-            # while setting _last_transform_type to MFT
-            self._propagate_mft_inverse(optic)
             self.location = 'before ' + optic.name
         elif self.planetype == PlaneType.image and optic.planetype == PlaneType.detector:
             raise NotImplementedError('image plane directly to detector propagation (resampling!) not implemented yet')
+        # elif (optic.planetype == PlaneType.pupil and self.planetype == PlaneType.image and
+        #         self._last_transform_type == 'MFT'):
         else:
-            print('Using FFT')
-            pass
+            # inverse MFT detector to pupil
+            # n.b. transforming PlaneType.pupil -> PlaneType.detector results in self.planetype == PlaneType.image
+            # while setting _last_transform_type to MFT
+            print('Using MFT Inverse')
+            self._propagate_mft_inverse(optic)
+            self.location = 'before ' + optic.name
+        # else:
+        #     print('Using FFT')
+        #     pass
             # self._propagate_fft(optic)  # FFT pupil to image or image to pupil
             # self.location = 'before ' + optic.name
 
@@ -1065,6 +1069,7 @@ class Wavefront(BaseWavefront):
         self._last_transform_type = 'MFT'
 
         self.planetype = PlaneType.image
+        print('Testing planetype:',self.planetype)
         self.fov = det.fov_arcsec
         self.pixelscale = det.fov_arcsec / det_calc_size_pixels 
 
@@ -1186,7 +1191,7 @@ class Wavefront(BaseWavefront):
             Was the last transformation on the Wavefront an FFT
             or an MFT?
         image_centered : string
-            Was POPPY trying to keeping the center of the image on
+            Was morphine trying to keeping the center of the image on
             a pixel, crosshairs ('array_center'), or corner?
         """
         y, x = onp.indices(shape, dtype=_float())
@@ -1348,7 +1353,7 @@ class BaseOpticalSystem(ABC):
 
         Returns
         -------
-        poppy.Rotation
+        morphine.Rotation
             The rotation added to the optical system
         """
         optic = Rotation(angle=angle, *args, **kwargs)
@@ -1367,7 +1372,7 @@ class BaseOpticalSystem(ABC):
 
         Returns
         -------
-        poppy.CoordinateInversion
+        morphine.CoordinateInversion
             The inversion added to the optical system
         """
         optic = CoordinateInversion(*args, **kwargs)
@@ -1395,7 +1400,7 @@ class BaseOpticalSystem(ABC):
 
         Returns
         -------
-        poppy.Detector
+        morphine.Detector
             The detector added to the optical system
 
         """
@@ -1469,13 +1474,13 @@ class BaseOpticalSystem(ABC):
         -------
         outfits :
             a fits.HDUList
-        intermediate_wfs : list of `poppy.Wavefront` objects (optional)
+        intermediate_wfs : list of `morphine.Wavefront` objects (optional)
             Only returned if `return_intermediates` is specified.
-            A list of `poppy.Wavefront` objects representing the wavefront at intermediate optical planes.
+            A list of `morphine.Wavefront` objects representing the wavefront at intermediate optical planes.
             The 0th item is "before first optical plane", 1st is "after first plane and before second plane", and so on.
-        final_wfs : `poppy.Wavefront` object (optional)
+        final_wfs : `morphine.Wavefront` object (optional)
             Only returned if `return_final` is specified.
-           `poppy.Wavefront` objects representing the wavefront at the last of the optical planes.
+           `morphine.Wavefront` objects representing the wavefront at the last of the optical planes.
         """
 
         tstart = time.time()
@@ -1500,7 +1505,7 @@ class BaseOpticalSystem(ABC):
         outfits = None
         intermediate_wfs = None
         if save_intermediates or return_intermediates:
-            # _log.info("User requested saving intermediate wavefronts in call to poppy.calc_psf")
+            # _log.info("User requested saving intermediate wavefronts in call to morphine.calc_psf")
             retain_intermediates = True
         else:
             retain_intermediates = False
@@ -1519,11 +1524,11 @@ class BaseOpticalSystem(ABC):
         #     if _USE_FFTW:
         #         _log.warning('IMPORTANT WARNING: Python multiprocessing and fftw3 do not appear to play well together. '
         #                      'This may crash intermittently')
-        #         _log.warning('   We suggest you set poppy.conf.use_fftw to False if you want to use multiprocessing().')
+        #         _log.warning('   We suggest you set morphine.conf.use_fftw to False if you want to use multiprocessing().')
         #     if display:
         #         _log.warning('Display during calculations is not supported for multiprocessing mode. '
-        #                      'Please set poppy.conf.use_multiprocessing = False if you want to use display=True.')
-        #         _log.warning('(Plot the returned PSF with poppy.utils.display_psf.)')
+        #                      'Please set morphine.conf.use_multiprocessing = False if you want to use display=True.')
+        #         _log.warning('(Plot the returned PSF with morphine.utils.display_psf.)')
 
         #     if return_intermediates:
         #         _log.warning('Memory usage warning: When preserving intermediate  planes in multiprocessing mode, '
@@ -1541,7 +1546,7 @@ class BaseOpticalSystem(ABC):
         #     # be sure to cast nproc to int below; will fail if given a float even if of integer value
 
         #     # Use forkserver method (requires Python >= 3.4) for more robustness, instead of just Pool
-        #     # Resolves https://github.com/mperrin/poppy/issues/23
+        #     # Resolves https://github.com/mperrin/morphine/issues/23
         #     ctx = multiprocessing.get_context('forkserver')
         #     pool = ctx.Pool(int(nproc))
 
@@ -1630,8 +1635,8 @@ class BaseOpticalSystem(ABC):
         # #     utils.fftw_save_wisdom()
 
         # # TODO update FITS header for oversampling here if detector is different from regular?
-        # waves = np.asarray(wavelength)
-        # wts = np.asarray(weight)
+        poly_psf.waves = np.array(wavelength)
+        poly_psf.spectrum = np.array(weight)
         # mnwave = (waves * wts).sum() / wts.sum()
         # outfits[0].header['WAVELEN'] = (mnwave, 'Weighted mean wavelength in meters')
         # outfits[0].header['NWAVES'] = (waves.size, 'Number of wavelengths used in calculation')
@@ -1675,12 +1680,12 @@ class BaseOpticalSystem(ABC):
             Should intermediate steps in the calculation be displayed on screen? Default: False.
         retain_intermediates : bool
             Should intermediate steps in the calculation be retained? Default: False.
-            If True, the second return value of the method will be a list of `poppy.Wavefront` objects
+            If True, the second return value of the method will be a list of `morphine.Wavefront` objects
             representing intermediate optical planes from the calculation.
         retain_final : bool
             Should the final complex wavefront be retained? Default: False.
             If True, the second return value of the method will be a single element list
-            (for consistency with retain intermediates) containing a `poppy.Wavefront` object
+            (for consistency with retain intermediates) containing a `morphine.Wavefront` object
             representing the final optical plane from the calculation.
             Overridden by retain_intermediates.
 
@@ -1689,7 +1694,7 @@ class BaseOpticalSystem(ABC):
         final_wf : fits.HDUList
             The final result of the monochromatic propagation as a FITS HDUList
         intermediate_wfs : list
-            A list of `poppy.Wavefront` objects representing the wavefront at intermediate optical planes.
+            A list of `morphine.Wavefront` objects representing the wavefront at intermediate optical planes.
             The 0th item is "before first optical plane", 1st is "after first plane and before second plane", and so on.
             (n.b. This will be empty if `retain_intermediates` is False and singular if retain_final is True.)
         """
@@ -1777,7 +1782,7 @@ class OpticalSystem(BaseOpticalSystem):
 
         Parameters
         ----------
-        optic : poppy.OpticalElement, optional
+        optic : morphine.OpticalElement, optional
             An already-created :py:class:`OpticalElement` object you would like to add
         function : string, optional
             Deprecated. The name of some analytic function you would like to use.
@@ -1791,7 +1796,7 @@ class OpticalSystem(BaseOpticalSystem):
 
         Returns
         -------
-        poppy.OpticalElement subclass
+        morphine.OpticalElement subclass
             The pupil optic added (either `optic` passed in, or a new OpticalElement created)
 
 
@@ -1846,7 +1851,7 @@ class OpticalSystem(BaseOpticalSystem):
 
         Parameters
         ----------
-        optic : poppy.OpticalElement
+        optic : morphine.OpticalElement
             An already-created OpticalElement you would like to add
         function: string
             Name of some analytic function to add.
@@ -1861,7 +1866,7 @@ class OpticalSystem(BaseOpticalSystem):
 
         Returns
         -------
-        poppy.OpticalElement subclass
+        morphine.OpticalElement subclass
             The pupil optic added (either `optic` passed in, or a new OpticalElement created)
 
         Notes
@@ -1936,7 +1941,7 @@ class OpticalSystem(BaseOpticalSystem):
 
         Returns
         -------
-        wavefront : poppy.Wavefront instance
+        wavefront : morphine.Wavefront instance
             A wavefront appropriate for passing through this optical system.
 
         """
@@ -2021,7 +2026,7 @@ class OpticalSystem(BaseOpticalSystem):
             Should intermediate steps in the calculation be displayed on screen? Default: False.
         return_intermediates : bool
             Should intermediate steps in the calculation be returned? Default: False.
-            If True, the second return value of the method will be a list of `poppy.Wavefront` objects
+            If True, the second return value of the method will be a list of `morphine.Wavefront` objects
             representing intermediate optical planes from the calculation.
 
         Returns a wavefront, and optionally also the intermediate wavefronts after
@@ -2037,6 +2042,7 @@ class OpticalSystem(BaseOpticalSystem):
         # note: 0 is 'before first optical plane; 1 = 'after first plane and before second plane' and so on
         for optic in self.planes:
             # The actual propagation:
+            print('Propagating Wavefront',wavefront.planetype,'Optic',optic.name,optic.planetype)
             wavefront.propagate_to(optic)
             wavefront *= optic
 
@@ -2166,7 +2172,7 @@ class CompoundOpticalSystem(OpticalSystem):
         See docstring of OpticalSystem.propagate for details
 
         """
-        from poppy.fresnel import FresnelOpticalSystem, FresnelWavefront
+        from morphine.fresnel import FresnelOpticalSystem, FresnelWavefront
 
         if return_intermediates:
             intermediate_wfs = []
@@ -2250,7 +2256,7 @@ class OpticalElement(object):
     verbose : bool
         whether to be more verbose in log outputs while computing
     planetype : int
-        either poppy.PlaneType.image or poppy.PlaneType.pupil
+        either morphine.PlaneType.image or morphine.PlaneType.pupil
     oversample : int
         how much to oversample beyond Nyquist.
     interp_order : int
@@ -2692,7 +2698,7 @@ class FITSOpticalElement(OpticalElement):
         implemented using spline interpolation via the
         scipy.ndimage.interpolation.rotate function.
     pixelscale : optical str or float
-        By default, poppy will attempt to determine the appropriate pixel scale
+        By default, morphine will attempt to determine the appropriate pixel scale
         by examining the FITS header, checking keywords "PIXELSCL", "PUPLSCAL" and/or 'PIXSCALE'.
         PIXELSCL is the default and should be preferred for new files; the latter two are
         kept for back-compatibility with earlier format input files,
@@ -3004,7 +3010,7 @@ class FITSOpticalElement(OpticalElement):
         phase, as in the case of the vector apodizing phase plate
         coronagraph of Snik et al. (Proc. SPIE, 2012), it is converted
         to optical path difference in meters at the given wavelength for
-        consistency with the rest of POPPY.
+        consistency with the rest of morphine.
 
         Parameters
         ----------

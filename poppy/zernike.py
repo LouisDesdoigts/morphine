@@ -24,14 +24,14 @@ Gram-Schmidt orthonormalization process as applied to this case is
 
 import inspect
 from math import factorial
-import numpy as np
+import jax.numpy as np
 
 import sys
 import logging
 
 import astropy.units as u
 
-from poppy.poppy_core import Wavefront
+from morphine.morphine_core import Wavefront
 
 from functools import lru_cache
 
@@ -280,7 +280,7 @@ def zernike1(j, **kwargs):
         Zernike function ordinate, following the convention of
         Noll et al. JOSA 1976
 
-    Additional arguments are defined as in `poppy.zernike.zernike`.
+    Additional arguments are defined as in `morphine.zernike.zernike`.
 
     Returns
     -------
@@ -331,7 +331,7 @@ def zernike_basis(nterms=15, npix=512, rho=None, theta=None, **kwargs):
         and 1.0 at the edge of the circular pupil. `theta` should be
         the angle in radians.
 
-    Other parameters are passed through to `poppy.zernike.zernike`
+    Other parameters are passed through to `morphine.zernike.zernike`
     and are documented there.
     """
     if rho is not None and theta is not None:
@@ -480,7 +480,7 @@ def hex_aperture(npix=1024, rho=None, theta=None, vertical=False, outside=0):
         x = rho * np.cos(theta)
         y = rho * np.sin(theta)
     else:
-        # the coordinates here must be consistent with those used elsewhere in poppy
+        # the coordinates here must be consistent with those used elsewhere in morphine
         # see issue #111
         x_ = (np.arange(npix, dtype=np.float64) - (npix - 1) / 2.) / (npix / 2.)
         x, y = np.meshgrid(x_, x_)
@@ -750,7 +750,7 @@ def arbitrary_basis(aperture, nterms=15, rho=None, theta=None, outside=np.nan):
         Default is `np.nan`, but you may also find it useful for this to
         be 0.0 sometimes.
     """
-    # code submitted by Arthur Vigan - see https://github.com/mperrin/poppy/issues/166
+    # code submitted by Arthur Vigan - see https://github.com/mperrin/morphine/issues/166
 
     shape = aperture.shape
     assert len(shape) == 2 and shape[0] == shape[1], \
@@ -851,8 +851,8 @@ class Segment_PTT_Basis(object):
         """
         # Internally this is implemented as a wrapper on HexDM which in turn is
         # a wrapper on MultiHexagonAperture
-        import poppy.dms
-        self.hexdm = poppy.dms.HexSegmentedDeformableMirror(rings=rings,
+        import morphine.dms
+        self.hexdm = morphine.dms.HexSegmentedDeformableMirror(rings=rings,
                                               flattoflat=flattoflat,
                                               gap=gap,
                                               center=center)
@@ -967,7 +967,7 @@ def opd_expand(opd, aperture=None, nterms=15, basis=zernike_basis,
     basis : callable, optional
         Callable (e.g. a function) that generates a sequence
         of basis arrays given arguments `nterms`, `npix`, and `outside`.
-        Default is `poppy.zernike.zernike_basis`.
+        Default is `morphine.zernike.zernike_basis`.
 
     Additional keyword arguments to this function are passed
     through to the `basis` callable.

@@ -4,21 +4,21 @@ import astropy.units as u
 import logging
 import time
 
-import poppy
-from poppy.poppy_core import PlaneType, Wavefront, BaseWavefront, BaseOpticalSystem
+import morphine
+from morphine.morphine_core import PlaneType, Wavefront, BaseWavefront, BaseOpticalSystem
 from . import utils
 from . import accel_math
 if accel_math._USE_NUMEXPR:
     import numexpr as ne
     pi = np.pi  # needed for evaluation inside numexpr strings.
 
-_log = logging.getLogger('poppy')
+_log = logging.getLogger('morphine')
 
 
 __all__ = ['QuadPhase', 'QuadraticLens', 'FresnelWavefront', 'FresnelOpticalSystem']
 
 
-class QuadPhase(poppy.optics.AnalyticOpticalElement):
+class QuadPhase(morphine.optics.AnalyticOpticalElement):
     """
     Quadratic phase factor,  q(z)
     suitable for representing a radially-dependent wavefront curvature.
@@ -27,7 +27,7 @@ class QuadPhase(poppy.optics.AnalyticOpticalElement):
     -----------------
     z : float or astropy.Quantity of type length
         radius of curvature
-    planetype : poppy.PlaneType constant
+    planetype : morphine.PlaneType constant
         plane type
     name : string
         Descriptive string name
@@ -44,7 +44,7 @@ class QuadPhase(poppy.optics.AnalyticOpticalElement):
                  planetype=PlaneType.intermediate,
                  name='Quadratic Wavefront Curvature Operator',
                  **kwargs):
-        poppy.AnalyticOpticalElement.__init__(self,
+        morphine.AnalyticOpticalElement.__init__(self,
                                               name=name,
                                               planetype=planetype,
                                               **kwargs)
@@ -112,7 +112,7 @@ class QuadraticLens(QuadPhase):
         Focal length of this lens
     name : string
         Descriptive string name
-    planetype : poppy.PlaneType constant
+    planetype : morphine.PlaneType constant
         plane type
 
     """
@@ -135,7 +135,7 @@ class QuadraticLens(QuadPhase):
         return "Lens: {0}, with focal length {1}".format(self.name, self.fl)
 
 
-class ConicLens(poppy.optics.CircularAperture):
+class ConicLens(morphine.optics.CircularAperture):
     @u.quantity_input(f_lens=u.m, radius=u.m)
     def __init__(self,
                  f_lens=1.0 * u.m,
@@ -157,7 +157,7 @@ class ConicLens(poppy.optics.CircularAperture):
             Radius of the clear aperture of the optic as seen on axis.
         name : string
             Descriptive name
-        planetype : poppy.PlaneType, optional
+        planetype : morphine.PlaneType, optional
             Optional optical plane type specifier
         """
         super(ConicLens, self).__init__(name=name, radius=radius.to(u.m).value, planetype=planetype, **kwargs)
@@ -180,7 +180,7 @@ class FresnelWavefront(BaseWavefront):
         Wavefront for Fresnel diffraction calculation.
 
         This class inherits from and extends the Fraunhofer-domain
-        poppy.Wavefront class.
+        morphine.Wavefront class.
 
 
         Parameters
@@ -1113,7 +1113,7 @@ class FresnelOpticalSystem(BaseOpticalSystem):
 
         Returns
         -------
-        wavefront : poppy.fresnel.FresnelWavefront instance
+        wavefront : morphine.fresnel.FresnelWavefront instance
             A wavefront appropriate for passing through this optical system.
 
         """
@@ -1165,23 +1165,23 @@ class FresnelOpticalSystem(BaseOpticalSystem):
                 _log.debug("normalizing at last plane to 1.0 total intensity")
 
             # Optional outputs:
-            if poppy.conf.enable_flux_tests:
+            if morphine.conf.enable_flux_tests:
                 _log.debug("  Flux === " + str(wavefront.total_intensity))
 
             if return_intermediates:  # save intermediate wavefront, summed for polychromatic if needed
                 intermediate_wfs.append(wavefront.copy())
 
             if display_intermediates:
-                if poppy.conf.enable_speed_tests:
+                if morphine.conf.enable_speed_tests:
                     t0 = time.time()
 
                 wavefront._display_after_optic(optic)
 
-                if poppy.conf.enable_speed_tests:
+                if morphine.conf.enable_speed_tests:
                     t1 = time.time()
                     _log.debug("\tTIME %f s\t for displaying the wavefront." % (t1 - t0))
 
-        if poppy.conf.enable_speed_tests:
+        if morphine.conf.enable_speed_tests:
             t_stop = time.time()
             _log.debug("\tTIME %f s\tfor propagating one wavelength" % (t_stop - t_start))
 

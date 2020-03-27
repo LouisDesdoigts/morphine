@@ -1,17 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.md
 
-"""Physical Optics Propagation in PYthon (POPPY)
+"""poppy-derivatives (morphine)
 
-POPPY is a Python package that simulates physical optical propagation including diffraction.
-It implements a flexible framework for modeling Fraunhofer (far-field) diffraction
-and point spread function formation, particularly in the context of astronomical telescopes.
-POPPY was developed as part of a simulation package for JWST, but is more broadly applicable to many kinds of
-imaging simulations.
+morphine is a Python package that simulates physical optical propagation including diffraction, with automatic differentiation.
 
-Developed by Marshall Perrin and colleagues at STScI, for use simulating the James Webb Space Telescope
-and other NASA missions.
+poppy was developed by Marshall Perrin and colleagues at STScI, for use simulating the James Webb Space Telescope
+and other NASA missions. Morphine is a fork of poppy by Benjamin Pope, adapting it to use Google Jax for autodiff.
 
-Documentation can be found online at https://poppy-optics.readthedocs.io/
+Documentation can be found online at https://morphine-optics.readthedocs.io/
 """
 
 # Affiliated packages may add whatever they like to this file, but
@@ -32,7 +28,7 @@ class UnsupportedPythonError(Exception):
     pass
 
 if sys.version_info < tuple((int(val) for val in __minimum_python_version__.split('.'))):
-    raise UnsupportedPythonError("poppy does not support Python < {}".format(__minimum_python_version__))
+    raise UnsupportedPythonError("morphine does not support Python < {}".format(__minimum_python_version__))
 
 
 from astropy import config as _config
@@ -40,7 +36,7 @@ from astropy import config as _config
 
 class Conf(_config.ConfigNamespace):
     """
-    Configuration parameters for `poppy`.
+    Configuration parameters for `morphine`.
     """
 
     use_multiprocessing = _config.ConfigItem(False,
@@ -62,7 +58,7 @@ class Conf(_config.ConfigNamespace):
     use_fftw = _config.ConfigItem(True, 'Use FFTW for FFTs (assuming it' +
                                   'is available)?  Set to False to force numpy.fft always, True to' +
                                   'try importing and using FFTW via PyFFTW.')
-    autosave_fftw_wisdom = _config.ConfigItem(True, 'Should POPPY ' +
+    autosave_fftw_wisdom = _config.ConfigItem(True, 'Should morphine ' +
                                               'automatically save and reload FFTW ' +
                                               '"wisdom" for improved speed?')
 
@@ -104,7 +100,7 @@ class Conf(_config.ConfigNamespace):
 
 conf = Conf()
 
-from . import poppy_core
+from . import morphine_core
 from . import utils
 from . import optics
 from . import misc
@@ -113,7 +109,7 @@ from . import physical_wavefront
 from . import wfe
 from . import dms
 
-from .poppy_core import *
+from .morphine_core import *
 from .utils import *
 from .optics import *
 from .wfe import *
@@ -128,4 +124,4 @@ from .instrument import Instrument
 #if accel_math._FFTW_AVAILABLE:
 #    utils.fftw_load_wisdom()
 
-__all__ = ['conf', 'Instrument'] + utils.__all__ + poppy_core.__all__ + optics.__all__ + fresnel.__all__ + wfe.__all__
+__all__ = ['conf', 'Instrument'] + utils.__all__ + morphine_core.__all__ + optics.__all__ + fresnel.__all__ + wfe.__all__

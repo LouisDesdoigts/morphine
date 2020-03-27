@@ -1,5 +1,5 @@
 #
-# Poppy utility functions
+# morphine utility functions
 #
 # These provide various utilities to measure the PSF's properties in certain ways, display it on screen etc.
 #
@@ -21,14 +21,14 @@ from astropy import config
 
 import astropy.io.fits as fits
 
-import poppy
+import morphine
 
 try:
     import pyfftw
 except ImportError:
     pyfftw = None
 
-_log = logging.getLogger('poppy')
+_log = logging.getLogger('morphine')
 
 _loaded_fftw_wisdom = False
 
@@ -108,7 +108,7 @@ def display_psf(HDUlist_or_filename, ext=0, vmin=1e-7, vmax=1e-1,
         'linear' or 'log', default is log
     cmap : matplotlib.cm.Colormap instance or None
         Colormap to use. If not given, taken from user's
-        `poppy.conf.cmap_sequential` (Default: 'gist_heat').
+        `morphine.conf.cmap_sequential` (Default: 'gist_heat').
     title : string, optional
         Set the plot title explicitly.
     imagecrop : float
@@ -205,7 +205,7 @@ def display_psf(HDUlist_or_filename, ext=0, vmin=1e-7, vmax=1e-1,
     extent = [-halffov_x, halffov_x, -halffov_y, halffov_y]
 
     if cmap is None:
-        cmap = getattr(matplotlib.cm, poppy.conf.cmap_sequential)
+        cmap = getattr(matplotlib.cm, morphine.conf.cmap_sequential)
     # update and get (or create) image axes
     ax = imshow_with_mouseover(
         im,
@@ -1036,14 +1036,14 @@ def measure_strehl(HDUlist_or_filename=None, ext=0, slice=0, center=None, displa
     NOTE - deprecated / removed function.  Moved to webbpsf package instead.
 
     This stub is just here to provide information on that transfer,
-    and will be removed in a future version of poppy.
+    and will be removed in a future version of morphine.
     """
     import warnings
-    warnings.warn("measure_strehl function has been deprecated and moved to webbpsf instead of poppy.",
+    warnings.warn("measure_strehl function has been deprecated and moved to webbpsf instead of morphine.",
                   DeprecationWarning)
     raise NotImplementedError(
-        "The 'measure_strehl' function has been moved from the 'poppy' package to the 'webbpsf' package. " +
-        "See https://github.com/mperrin/poppy/issues/138")
+        "The 'measure_strehl' function has been moved from the 'morphine' package to the 'webbpsf' package. " +
+        "See https://github.com/mperrin/morphine/issues/138")
 
 
 def measure_anisotropy(HDUlist_or_filename=None, ext=0, slice=0, boxsize=50):
@@ -1297,16 +1297,16 @@ class BackCompatibleQuantityInput(object):
         the decorator, or via an annotation on the function argument itself:
         .. code-block:: python3
 
-            import poppy.utils
-            @poppy.utils.back_compatible_quantity_input(mylength=u.meter)
+            import morphine.utils
+            @morphine.utils.back_compatible_quantity_input(mylength=u.meter)
             def myfunction(mylength):
                 return mylength**2
 
 
         .. code-block:: python3
 
-            import poppy.utils
-            @poppy.utils.back_compatible_quantity_input
+            import morphine.utils
+            @morphine.utils.back_compatible_quantity_input
             def myfunction(mylength: u.meter):
                 return mylength**2
 
@@ -1688,12 +1688,12 @@ def fftw_save_wisdom(filename=None):
     Parameters
     ------------
     filename : string, optional
-        Filename to use (instead of the default, poppy_fftw_wisdom.json)
+        Filename to use (instead of the default, morphine_fftw_wisdom.json)
     """
 
     from .accel_math import _FFTW_INIT
     if filename is None:
-        filename = os.path.join(config.get_config_dir(), "poppy_fftw_wisdom.json")
+        filename = os.path.join(config.get_config_dir(), "morphine_fftw_wisdom.json")
 
     # PyFFTW exports as bytestrings, but `json` uses only real strings in Python 3.x+
     double, single, longdouble = pyfftw.export_wisdom()
@@ -1722,7 +1722,7 @@ def fftw_load_wisdom(filename=None):
     Parameters
     ------------
     filename : string, optional
-        Filename to use (instead of the default, poppy_fftw_wisdom.json)
+        Filename to use (instead of the default, morphine_fftw_wisdom.json)
     """
     from .accel_math import _FFTW_INIT
     global _loaded_fftw_wisdom
@@ -1730,7 +1730,7 @@ def fftw_load_wisdom(filename=None):
         _log.debug("Already loaded wisdom prior to this calculation, not reloading.")
         return
     if filename is None:
-        filename = os.path.join(config.get_config_dir(), "poppy_fftw_wisdom.json")
+        filename = os.path.join(config.get_config_dir(), "morphine_fftw_wisdom.json")
 
     if not os.path.exists(filename):
         return  # No wisdom yet, but that's not an error

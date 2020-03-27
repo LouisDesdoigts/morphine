@@ -1,19 +1,19 @@
 # Specialized optical system propagators
 # In particular for efficient modeling of astronomical coronagraphs
 
-import numpy as np
+import jax.numpy as np
 import time
 import logging
 import astropy.units as u
 
-from . import poppy_core
+from . import morphine_core
 from . import utils
 from . import conf
 
-_log = logging.getLogger('poppy')
+_log = logging.getLogger('morphine')
 
 
-class SemiAnalyticCoronagraph(poppy_core.OpticalSystem):
+class SemiAnalyticCoronagraph(morphine_core.OpticalSystem):
     """ A subclass of OpticalSystem that implements a specialized propagation
     algorithm for coronagraphs whose occulting mask has limited and small support in
     the image plane. Algorithm from Soummer et al. (2007)
@@ -71,7 +71,7 @@ class SemiAnalyticCoronagraph(poppy_core.OpticalSystem):
 
         self.mask_function = optics.InverseTransmission(self.occulter)
 
-        pt = poppy_core.PlaneType
+        pt = morphine_core.PlaneType
         for label, plane, typecode in zip(["Occulter (plane {})".format(fpm_index),
                                            "Lyot (plane {})".format(fpm_index + 1),
                                            "Detector (last plane)"],
@@ -89,7 +89,7 @@ class SemiAnalyticCoronagraph(poppy_core.OpticalSystem):
                                                   # just below will work
         self.occulter_box = occulter_box
 
-        self.occulter_highres = poppy_core.Detector(self.detector.pixelscale / self.oversample,
+        self.occulter_highres = morphine_core.Detector(self.detector.pixelscale / self.oversample,
                                                     fov_arcsec=self.occulter_box * 2,
                                                     name='Oversampled Occulter Plane')
 
@@ -202,7 +202,7 @@ class SemiAnalyticCoronagraph(poppy_core.OpticalSystem):
 
 
 
-class MatrixFTCoronagraph(poppy_core.OpticalSystem):
+class MatrixFTCoronagraph(morphine_core.OpticalSystem):
     """ A subclass of OpticalSystem that implements a specialized propagation
     algorithm for coronagraphs which are most efficiently modeled by
     matrix Fourier transforms, and in which the semi-analytical/Babinet
@@ -287,14 +287,14 @@ class MatrixFTCoronagraph(poppy_core.OpticalSystem):
         current_plane_index = 0
         for optic in self.planes:
             # The actual propagation:
-            if optic.planetype == poppy_core.PlaneType.image:
+            if optic.planetype == morphine_core.PlaneType.image:
                 if len(optic.amplitude.shape) == 2:  # Match detector object to the loaded FPM transmission array
-                    metadet = poppy_core.Detector(optic.pixelscale, fov_pixels=optic.amplitude.shape[0],
+                    metadet = morphine_core.Detector(optic.pixelscale, fov_pixels=optic.amplitude.shape[0],
                                                   name='Oversampled Occulter Plane')
                 else:
                     metadet_pixelscale = ((wavefront.wavelength / self.planes[0].pupil_diam).decompose()
                                           * u.radian).to(u.arcsec) / self.oversample / 2 / u.pixel
-                    metadet = poppy_core.Detector(metadet_pixelscale, fov_arcsec=self.occulter_box * 2,
+                    metadet = morphine_core.Detector(metadet_pixelscale, fov_arcsec=self.occulter_box * 2,
                                                   name='Oversampled Occulter Plane')
                 wavefront.propagate_to(metadet)
             else:
@@ -311,7 +311,7 @@ class MatrixFTCoronagraph(poppy_core.OpticalSystem):
                 wavefront.normalize()
                 wavefront *= np.sqrt(2)
             elif normalize.lower() == 'exit_pupil':  # normalize the last pupil in the system to 1
-                last_pupil_plane_index = np.where(np.asarray([p.planetype is poppy_core.PlaneType.pupil
+                last_pupil_plane_index = np.where(np.asarray([p.planetype is morphine_core.PlaneType.pupil
                                                               for p in self.planes]))[0].max() + 1
                 if current_plane_index == last_pupil_plane_index:
                     wavefront.normalize()

@@ -18,8 +18,8 @@ from jax.ops import index_update
 
 
 from .optics import AnalyticOpticalElement, CircularAperture
-from .poppy_core import Wavefront, PlaneType, BaseWavefront
-from poppy.fresnel import FresnelWavefront
+from .morphine_core import Wavefront, PlaneType, BaseWavefront
+from morphine.fresnel import FresnelWavefront
 
 from . import zernike
 from . import utils
@@ -31,7 +31,7 @@ __all__ = ['WavefrontError', 'ParameterizedWFE', 'ZernikeWFE', 'SineWaveWFE',
 
 def _check_wavefront_arg(f):
     """Decorator that ensures the first positional method argument
-    is a poppy.Wavefront or FresnelWavefront
+    is a morphine.Wavefront or FresnelWavefront
     """
 
     @wraps(f)
@@ -207,7 +207,7 @@ class ZernikeWFE(WavefrontError):
         """
         Parameters
         ----------
-        wave : poppy.Wavefront (or float)
+        wave : morphine.Wavefront (or float)
             Incoming Wavefront before this optic to set wavelength and
             scale, or a float giving the wavelength in meters
             for a temporary Wavefront used to compute the OPD.
@@ -289,7 +289,7 @@ class SineWaveWFE(WavefrontError):
         """
         Parameters
         ----------
-        wave : poppy.Wavefront (or float)
+        wave : morphine.Wavefront (or float)
             Incoming Wavefront before this optic to set wavelength and
             scale, or a float giving the wavelength in meters
             for a temporary Wavefront used to compute the OPD.
@@ -334,7 +334,7 @@ class StatisticalPSDWFE(WavefrontError):
         """
         Parameters
         ----------
-        wave : poppy.Wavefront (or float)
+        wave : morphine.Wavefront (or float)
             Incoming Wavefront before this optic to set wavelength and
             scale, or a float giving the wavelength in meters
             for a temporary Wavefront used to compute the OPD.

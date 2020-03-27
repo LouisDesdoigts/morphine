@@ -8,7 +8,7 @@ from . import conf
 
 import time
 import logging
-_log = logging.getLogger('poppy')
+_log = logging.getLogger('morphine')
 
 
 try:
@@ -364,66 +364,66 @@ if  _CUDA_AVAILABLE:
 
 def benchmark_fft(npix=2048, iterations=20, double_precision=True):
     """ Performance benchmark function for standard imaging """
-    #import poppy
+    #import morphine
     import timeit
-    import poppy
+    import morphine
 
 
     complextype = 'complex128' if double_precision else 'complex64'
 
-    timer = timeit.Timer("tmp2 = poppy.accel_math.fft_2d(tmp, fftshift=False)",
+    timer = timeit.Timer("tmp2 = morphine.accel_math.fft_2d(tmp, fftshift=False)",
             setup="""
-import poppy
+import morphine
 import numpy as np
 tmp = np.asarray(np.random.rand({npix},{npix}), np.{complextype})
             """.format(npix=npix, complextype=complextype))
     print("Timing performance of FFT for {npix} x {npix}, {complextype}, with {iterations} iterations".format(
         npix=npix, iterations=iterations, complextype=complextype))
 
-    defaults = (poppy.conf.use_fftw, poppy.conf.use_numexpr, poppy.conf.use_cuda,
-            poppy.conf.use_opencl, poppy.conf.double_precision)
-    poppy.conf.double_precision = double_precision
+    defaults = (morphine.conf.use_fftw, morphine.conf.use_numexpr, morphine.conf.use_cuda,
+            morphine.conf.use_opencl, morphine.conf.double_precision)
+    morphine.conf.double_precision = double_precision
 
     # Time baseline performance in numpy
     print("Timing performance in plain numpy:")
 
-    poppy.conf.use_fftw, poppy.conf.use_numexpr, poppy.conf.use_cuda, poppy.conf.use_opencl = (False, False, False, False)
+    morphine.conf.use_fftw, morphine.conf.use_numexpr, morphine.conf.use_cuda, morphine.conf.use_opencl = (False, False, False, False)
     update_math_settings()
     time_numpy = timer.timeit(number=iterations) / iterations
     print("  {:.3f} s".format(time_numpy))
 
-    if poppy.accel_math._FFTW_AVAILABLE:
+    if morphine.accel_math._FFTW_AVAILABLE:
         print("Timing performance with FFTW:")
-        poppy.conf.use_fftw = True
+        morphine.conf.use_fftw = True
         update_math_settings()
         time_fftw = timer.timeit(number=iterations) / iterations
         print("  {:.3f} s".format(time_fftw))
     else:
         time_fftw = np.NaN
 
-    if poppy.accel_math._NUMEXPR_AVAILABLE:
+    if morphine.accel_math._NUMEXPR_AVAILABLE:
         print("Timing performance with Numexpr + FFTW:")
-        poppy.conf.use_numexpr = True
+        morphine.conf.use_numexpr = True
         update_math_settings()
         time_numexpr = timer.timeit(number=iterations) / iterations
         print("  {:.3f} s".format(time_numexpr))
     else:
         time_numexpr = np.NaN
 
-    if poppy.accel_math._CUDA_AVAILABLE:
+    if morphine.accel_math._CUDA_AVAILABLE:
         print("Timing performance with CUDA:")
-        poppy.conf.use_cuda = True
-        poppy.conf.use_opencl = False
+        morphine.conf.use_cuda = True
+        morphine.conf.use_opencl = False
         update_math_settings()
         time_cuda = timer.timeit(number=iterations) / iterations
         print("  {:.3f} s".format(time_cuda))
     else:
         time_cuda = np.NaN
 
-    if poppy.accel_math._OPENCL_AVAILABLE:
+    if morphine.accel_math._OPENCL_AVAILABLE:
         print("Timing performance with OpenCL:")
-        poppy.conf.use_opencl = True
-        poppy.conf.use_cuda = False
+        morphine.conf.use_opencl = True
+        morphine.conf.use_cuda = False
         update_math_settings()
         time_opencl = timer.timeit(number=iterations) / iterations
         print("  {:.3f} s".format(time_opencl))
@@ -431,8 +431,8 @@ tmp = np.asarray(np.random.rand({npix},{npix}), np.{complextype})
         time_opencl = np.NaN
 
 
-    poppy.conf.use_fftw, poppy.conf.use_numexpr, poppy.conf.use_cuda,\
-            poppy.conf.use_opencl, poppy.conf.double_precision = defaults
+    morphine.conf.use_fftw, morphine.conf.use_numexpr, morphine.conf.use_cuda,\
+            morphine.conf.use_opencl, morphine.conf.double_precision = defaults
 
     return {'numpy': time_numpy,
             'fftw': time_fftw,

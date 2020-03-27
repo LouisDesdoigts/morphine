@@ -11,7 +11,7 @@ if accel_math._USE_NUMEXPR:
     import numexpr as ne
 
 import logging
-_log = logging.getLogger('poppy')
+_log = logging.getLogger('morphine')
 
 
 # original code in pixwt.c by Marc Buie

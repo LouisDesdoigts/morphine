@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
+import jax.numpy as np
 import scipy.constants as const
 import astropy.units as u
 from copy import deepcopy
 from scipy.linalg import lstsq
 
-from poppy.fresnel import FresnelWavefront, QuadraticLens
+from morphine.fresnel import FresnelWavefront, QuadraticLens
 
 
 class PhysicalFresnelWavefront(FresnelWavefront):
     """
-    This class extends the capabilities of poppy's FresnelWavefront class.
+    This class extends the capabilities of morphine's FresnelWavefront class.
 
     The extension includes the redefinition of the wavefront array to
     represent an electric field with the appropriate units V.m^-1.
@@ -64,7 +64,7 @@ class PhysicalFresnelWavefront(FresnelWavefront):
     def dx(self):
         """Spatial grid sampling (m)."""
 
-        return self.pixelscale.to(u.m / u.pixel).value
+        return self.pixelscale
 
     @property
     def xy(self):
@@ -130,7 +130,7 @@ class PhysicalFresnelWavefront(FresnelWavefront):
 
         pow = self.power
         super(PhysicalFresnelWavefront, self).propagate_fresnel(z, **kwargs)
-        self.scale_power(pow * np.exp(-attenuation_coeff * z.to(u.m).value))
+        self.scale_power(pow * np.exp(-attenuation_coeff * z))
 
     def center(self, mask=1.0):
         """
@@ -182,9 +182,9 @@ class PhysicalFresnelWavefront(FresnelWavefront):
         2nd moments according to DIN EN ISO 11146-1.
         """
 
-        w_x = self.diam.to(u.m).value / 2  # Initial guess
-        w_y = self.diam.to(u.m).value / 2  # Initial guess
-        w = self.diam.to(u.m).value / 2  # Initial guess
+        w_x = self.diam/ 2  # Initial guess
+        w_y = self.diam / 2  # Initial guess
+        w = self.diam / 2  # Initial guess
         eps = min(w_x, w_y) / max(w_x, w_y)
         num = self.npix
         mask = np.ones((num, num), dtype=float)
@@ -265,7 +265,7 @@ class PhysicalFresnelWavefront(FresnelWavefront):
         # Apply a very short focal length
         f = 1.0
         L = 2.0 * f
-        wf_ini *= QuadraticLens(f_lens=f * u.m)
+        wf_ini *= QuadraticLens(f_lens=f)
 
         num_z = 11
         dz = np.ones(num_z, dtype=float)
@@ -281,7 +281,7 @@ class PhysicalFresnelWavefront(FresnelWavefront):
             wf_work = deepcopy(wf_ini)
 
             for idx_z in range(num_z):
-                wf_work.propagate_fresnel(dz[idx_z] * u.m)
+                wf_work.propagate_fresnel(dz[idx_z])
                 if direction == 'x':
                     w, _, _, _ = wf_work.radius
                 elif direction == 'y':

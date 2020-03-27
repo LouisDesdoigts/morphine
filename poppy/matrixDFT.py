@@ -49,7 +49,7 @@ from jax import grad, jit, vmap
 from jax import random
 
 import logging
-_log = logging.getLogger('poppy')
+_log = logging.getLogger('morphine')
 
 FFTSTYLE = 'FFTSTYLE'
 FFTRECT = 'FFTRECT'
@@ -309,7 +309,7 @@ class MatrixFourierTransform:
         * SYMMETRIC spreads the zero-order term evenly between the center
           four pixels
     verbose : bool
-        Deprecated. Use poppy.conf.default_logging_level to set DEBUG level
+        Deprecated. Use morphine.conf.default_logging_level to set DEBUG level
         logging.
 
     Example
