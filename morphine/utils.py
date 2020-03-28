@@ -12,6 +12,8 @@ import pickle
 import matplotlib
 import matplotlib.pyplot as plt
 import jax.numpy as np
+from jax.ops import index_update, index
+
 import numpy as onp
 import scipy.interpolate
 import scipy.ndimage
@@ -1081,7 +1083,7 @@ def pad_to_oversample(array, oversample):
     n1 = n0 + npix
     n0 = int(round(n0))  # because astropy test_plugins enforces integer indices
     n1 = int(round(n1))
-    padded[n0:n1, n0:n1] = array
+    padded = index_update(padded,index[n0:n1, n0:n1], array)
     return padded
 
 

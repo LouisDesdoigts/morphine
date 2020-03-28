@@ -925,7 +925,6 @@ class Wavefront(BaseWavefront):
             # _log.debug(msg)
             # self.history.append(msg)
             pass
-        print('propagate_to Wavefront',self.planetype,'Optic:',optic.planetype)
 
         if optic.planetype == PlaneType.rotation:  # rotate
             self.rotate(optic.angle)
@@ -933,86 +932,85 @@ class Wavefront(BaseWavefront):
         elif optic.planetype == PlaneType.inversion:  # invert coordinates
             self.invert(axis=optic.axis)
             self.location = 'after ' + optic.name
-        elif ((optic.planetype == PlaneType.detector or optic.planetype == PlaneType.image or getattr(optic, 'propagation_hint', None) == 'MFT')
+        elif ((optic.planetype == PlaneType.detector or getattr(optic, 'propagation_hint', None) == 'MFT')
                 and self.planetype == PlaneType.pupil):  # from pupil to detector in image plane: use MFT
-            print('Using MFT')
             self._propagate_mft(optic)
             self.location = 'before ' + optic.name
         elif self.planetype == PlaneType.image and optic.planetype == PlaneType.detector:
             raise NotImplementedError('image plane directly to detector propagation (resampling!) not implemented yet')
-        # elif (optic.planetype == PlaneType.pupil and self.planetype == PlaneType.image and
-        #         self._last_transform_type == 'MFT'):
-        else:
+        elif (optic.planetype == PlaneType.pupil and self.planetype == PlaneType.image and
+                self._last_transform_type == 'MFT'):
+        # else:
             # inverse MFT detector to pupil
             # n.b. transforming PlaneType.pupil -> PlaneType.detector results in self.planetype == PlaneType.image
             # while setting _last_transform_type to MFT
-            print('Using MFT Inverse')
             self._propagate_mft_inverse(optic)
             self.location = 'before ' + optic.name
-        # else:
+        else:
         #     print('Using FFT')
         #     pass
-            # self._propagate_fft(optic)  # FFT pupil to image or image to pupil
-            # self.location = 'before ' + optic.name
+            self._propagate_fft(optic)  # FFT pupil to image or image to pupil
+            self.location = 'before ' + optic.name
 
         self.current_plane_index += 1
 
 
-    # def _propagate_fft(self, optic):
-    #     """ Propagate from pupil to image or vice versa using a padded FFT
+    def _propagate_fft(self, optic):
+        """ Propagate from pupil to image or vice versa using a padded FFT
 
-    #     Parameters
-    #     -----------
-    #     optic : OpticalElement
-    #         The optic to propagate to. Used for determining the appropriate optical plane.
+        Parameters
+        -----------
+        optic : OpticalElement
+            The optic to propagate to. Used for determining the appropriate optical plane.
 
-    #     """
-    #     if self.oversample > 1 and not self.ispadded:  # add padding for oversampling, if necessary
-    #         assert self.oversample == optic.oversample
-    #         self.wavefront = utils.pad_to_oversample(self.wavefront, self.oversample)
-    #         self.ispadded = True
-    #         if optic.verbose:
-    #             _log.debug("    Padded WF array for oversampling by %dx" % self.oversample)
-            # self.history.append("    Padded WF array for oversampling by %dx" % self.oversample)
+        """
+        if self.oversample > 1 and not self.ispadded:  # add padding for oversampling, if necessary
+            assert self.oversample == optic.oversample
+            self.wavefront = utils.pad_to_oversample(self.wavefront, self.oversample)
+            self.ispadded = True
+            # if optic.verbose:
+            #     _log.debug("    Padded WF array for oversampling by %dx" % self.oversample)
+            self.history.append("    Padded WF array for oversampling by %dx" % self.oversample)
 
-    #     # Set up for computation - figure out direction & normalization
-    #     if self.planetype == PlaneType.pupil and optic.planetype == PlaneType.image:
-    #         fft_forward = True
+        # Set up for computation - figure out direction & normalization
+        if self.planetype == PlaneType.pupil and optic.planetype == PlaneType.image:
+            fft_forward = True
 
-    #         # (pre-)update state:
-    #         self.planetype = PlaneType.image
-    #         self.pixelscale = (self.wavelength / self.diam * u.radian / self.oversample).to(u.arcsec) / u.pixel
-    #         self.fov = self.wavefront.shape[0] * u.pixel * self.pixelscale
-            # self.history.append('   FFT {},  to IMAGE plane  scale={:.4f}'.format(self.wavefront.shape, self.pixelscale))
+            # (pre-)update state:
+            self.planetype = PlaneType.image
+            self.pixelscale = (self.wavelength / self.diam / self.oversample)/arcsec2rad
+            self.fov = self.wavefront.shape[0] * self.pixelscale
+            self.history.append('   FFT {},  to IMAGE plane  scale={:.4f}'.format(self.wavefront.shape, self.pixelscale))
 
-    #     elif self.planetype == PlaneType.image and optic.planetype == PlaneType.pupil:
-    #         fft_forward = False
+        elif self.planetype == PlaneType.image and optic.planetype == PlaneType.pupil:
+            fft_forward = False
 
-    #         # (pre-)update state:
-    #         self.planetype = PlaneType.pupil
-    #         self.pixelscale = self.diam * self.oversample / (self.wavefront.shape[0] * u.pixel)
-            # self.history.append('   FFT {},  to PUPIL scale={:.4f}'.format(self.wavefront.shape, self.pixelscale))
+            # (pre-)update state:
+            self.planetype = PlaneType.pupil
+            self.pixelscale = self.diam * self.oversample / (self.wavefront.shape[0])
+            self.history.append('   FFT {},  to PUPIL scale={:.4f}'.format(self.wavefront.shape, self.pixelscale))
 
-    #     # do FFT
-    #     if conf.enable_flux_tests: _log.debug("\tPre-FFT total intensity: " + str(self.total_intensity))
-    #     if conf.enable_speed_tests: t0 = time.time()
+        # # do FFT
+        # if conf.enable_flux_tests: _log.debug("\tPre-FFT total intensity: " + str(self.total_intensity))
+        # if conf.enable_speed_tests: t0 = time.time()
 
-    #     self.wavefront = accel_math.fft_2d(self.wavefront, forward=fft_forward)
+        if fft_forward:
+            # FFT produces pixel-centered images by default, unless the _image_centered param
+            # has already been set by an FQPM_FFT_aligner class
+            if self._image_centered != 'corner':
+                self._image_centered = 'pixel'
+            self.wavefront = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.wavefront)))
+        else:
+            self.wavefront = np.fft.ifftshift(np.fft.ifft2(np.fft.ifftshift(self.wavefront)))
 
-    #     if fft_forward:
-    #         # FFT produces pixel-centered images by default, unless the _image_centered param
-    #         # has already been set by an FQPM_FFT_aligner class
-    #         if self._image_centered != 'corner':
-    #             self._image_centered = 'pixel'
+        self._last_transform_type = 'FFT'
 
-    #     self._last_transform_type = 'FFT'
+        # if conf.enable_speed_tests:
+        #     t1 = time.time()
+        #     _log.debug("\tTIME %f s\t for the FFT" % (t1 - t0))
 
-    #     if conf.enable_speed_tests:
-    #         t1 = time.time()
-    #         _log.debug("\tTIME %f s\t for the FFT" % (t1 - t0))
-
-    #     if conf.enable_flux_tests:
-    #         _log.debug("\tPost-FFT total intensity: " + str(self.total_intensity))
+        # if conf.enable_flux_tests:
+        #     _log.debug("\tPost-FFT total intensity: " + str(self.total_intensity))
 
     def _propagate_mft(self, det):
         """ Compute from pupil to an image using the Soummer et al. 2007 MFT algorithm
@@ -1069,7 +1067,6 @@ class Wavefront(BaseWavefront):
         self._last_transform_type = 'MFT'
 
         self.planetype = PlaneType.image
-        print('Testing planetype:',self.planetype)
         self.fov = det.fov_arcsec
         self.pixelscale = det.fov_arcsec / det_calc_size_pixels 
 
@@ -2042,7 +2039,6 @@ class OpticalSystem(BaseOpticalSystem):
         # note: 0 is 'before first optical plane; 1 = 'after first plane and before second plane' and so on
         for optic in self.planes:
             # The actual propagation:
-            print('Propagating Wavefront',wavefront.planetype,'Optic',optic.name,optic.planetype)
             wavefront.propagate_to(optic)
             wavefront *= optic
 
@@ -2069,8 +2065,8 @@ class OpticalSystem(BaseOpticalSystem):
             # if conf.enable_flux_tests:
             #     _log.debug("  Flux === " + str(wavefront.total_intensity))
 
-            # if return_intermediates:  # save intermediate wavefront, summed for polychromatic if needed
-            #     intermediate_wfs.append(wavefront.copy())
+            if return_intermediates:  # save intermediate wavefront, summed for polychromatic if needed
+                intermediate_wfs.append(wavefront.copy())
             # if display_intermediates:
             #     wavefront._display_after_optic(optic, default_nplanes=len(self))
 
