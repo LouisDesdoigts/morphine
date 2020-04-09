@@ -1184,8 +1184,7 @@ def removePadding(array, oversample):
     n1 = n0 + npix
     n0 = int(round(n0))
     n1 = int(round(n1))
-    return array[n0:n1, n0:n1].copy()
-
+    return array[n0:n1, n0:n1]
 
 def rebin_array(a=None, rc=(2, 2), verbose=False):
     """ Rebin array by an integer factor while conserving flux

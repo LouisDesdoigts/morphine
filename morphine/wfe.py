@@ -188,7 +188,7 @@ class ZernikeWFE(WavefrontError):
         computed such that rho = 1 at r = `radius`.
     """
 
-    def __init__(self, name="Zernike WFE", coefficients=None, radius=None,
+    def __init__(self, name="Zernike WFE", coefficients=None, radius=None, cached_zernikes=None,
             aperture_stop=False, **kwargs):
 
         if radius is None:
@@ -197,6 +197,7 @@ class ZernikeWFE(WavefrontError):
         self.radius = radius
         self.aperture_stop = aperture_stop
         self.coefficients = coefficients
+        self.cached_zernikes= cached_zernikes
         self.circular_aperture = CircularAperture(radius=self.radius, gray_pixel=False, **kwargs)
         self._default_display_size = radius * 3
         kwargs.update({'name': name})
@@ -227,27 +228,32 @@ class ZernikeWFE(WavefrontError):
             y, x = self.get_coordinates(wave)
             rho, theta = _wave_y_x_to_rho_theta(y, x, self.radius)
 
-        combined_zernikes = np.zeros(wave.shape, dtype=np.float64)
-        for j, k in enumerate(self.coefficients, start=1):
-            k_in_m = k
 
-            if has_offset_coords:
-                combined_zernikes += k_in_m * zernike.zernike1(
-                    j,
-                    rho=rho,
-                    theta=theta,
-                    outside=0.0,
-                    noll_normalize=True
-                )
-            else:
-                combined_zernikes += k_in_m * zernike.cached_zernike1(
-                    j,
-                    wave.shape,
-                    pixelscale_m,
-                    self.radius,
-                    outside=0.0,
-                    noll_normalize=True
-                )
+        if self.cached_zernikes is not None:
+            combined_zernikes = np.tensordot(self.coefficients,self.cached_zernikes,axes=(0,0))
+        else:
+            combined_zernikes = np.zeros(wave.shape, dtype=np.float64)
+
+            for j, k in enumerate(self.coefficients, start=1):
+                k_in_m = k
+
+                if has_offset_coords:
+                    combined_zernikes += k_in_m * zernike.zernike1(
+                        j,
+                        rho=rho,
+                        theta=theta,
+                        outside=0.0,
+                        noll_normalize=True
+                    )
+                else:
+                    combined_zernikes += k_in_m * zernike.cached_zernike1(
+                        j,
+                        wave.shape,
+                        pixelscale_m,
+                        self.radius,
+                        outside=0.0,
+                        noll_normalize=True
+                    )
 
         index_update(combined_zernikes,aperture_intensity==0,0) 
         # combined_zernikes[aperture_intensity==0] = 0

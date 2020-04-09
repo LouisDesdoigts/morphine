@@ -25,6 +25,7 @@ Gram-Schmidt orthonormalization process as applied to this case is
 import inspect
 from math import factorial
 import jax.numpy as np
+from jax.ops import index_update, index
 
 import sys
 import logging
@@ -245,7 +246,8 @@ def zernike(n, m, npix=100, rho=None, theta=None, outside=np.nan,
         raise ValueError('The rho and theta arrays do not have consistent shape.')
 
     aperture = np.ones(rho.shape)
-    aperture[np.where(rho > 1)] = 0.0  # this is the aperture mask
+    aperture = index_update(aperture,np.where(rho > 1),0.)
+    # aperture[np.where(rho > 1)] = 0.0  # this is the aperture mask
 
     if m == 0:
         if n == 0:
@@ -259,8 +261,8 @@ def zernike(n, m, npix=100, rho=None, theta=None, outside=np.nan,
     else:
         norm_coeff = np.sqrt(2) * np.sqrt(n + 1) if noll_normalize else 1
         zernike_result = norm_coeff * R(n, m, rho) * np.sin(np.abs(m) * theta) * aperture
-
-    zernike_result[np.where(rho > 1)] = outside
+    zernike_result = index_update(zernike_result,np.where(rho > 1),outside)
+    # zernike_result[np.where(rho > 1)] = outside
     return zernike_result
 
 
@@ -307,7 +309,7 @@ def cached_zernike1(j, shape, pixelscale, pupil_radius, outside=np.nan, noll_nor
 
     n, m = noll_indices(j)
     result = zernike(n, m, rho=rho, theta=theta, outside=outside, noll_normalize=noll_normalize)
-    result.flags.writeable = False  # don't let caller modify cached copy in-place
+    # result.flags.writeable = False  # don't let caller modify cached copy in-place
     return result
 
 
@@ -350,10 +352,12 @@ def zernike_basis(nterms=15, npix=512, rho=None, theta=None, **kwargs):
 
     if use_polar:
         for j in range(nterms):
-            zern_output[j] = zernike1(j + 1, rho=rho, theta=theta, **kwargs)
+            zern_output = index_update(zern_output,j,zernike1(j + 1, rho=rho, theta=theta, **kwargs))
+            # zern_output[j] = zernike1(j + 1, rho=rho, theta=theta, **kwargs)
     else:
         for j in range(nterms):
-            zern_output[j] = zernike1(j + 1, npix=npix, **kwargs)
+            zern_output = index_update(zern_output,j,zernike1(j + 1, npix=npix, **kwargs))
+            # zern_output[j] = zernike1(j + 1, npix=npix, **kwargs)
     return zern_output
 
 
@@ -395,7 +399,8 @@ def zernike_basis_faster(nterms=15, npix=512, outside=np.nan):
     theta = np.arctan2(yy, xx)
 
     aperture = np.ones_like(rho)
-    aperture[rho > 1] = 0.0  # this is the aperture mask
+    aperture = index_update(aperture,rho > 1,0.0)
+    # aperture[rho > 1] = 0.0  # this is the aperture mask
     noll_normalize = True
 
     @lru_cache()
@@ -439,8 +444,10 @@ def zernike_basis_faster(nterms=15, npix=512, outside=np.nan):
             norm_coeff = np.sqrt(2) * np.sqrt(n + 1) if noll_normalize else 1
             zernike_result = norm_coeff * cached_R(n, np.abs(m)) * np.sin(np.abs(m) * theta) * aperture
 
-        zernike_result[rho > 1] = outside
-        zern_output[j] = zernike_result
+        zernike_result = index_update(zernike_result,rho>1,outside)
+        zern_output = index_update(zern_output,j,zernike_result)
+        # zernike_result[rho > 1] = outside
+        # zern_output[j] = zernike_result
 
     return zern_output
 
@@ -491,9 +498,13 @@ def hex_aperture(npix=1024, rho=None, theta=None, vertical=False, outside=0):
     w_rect = np.where((np.abs(x) <= 0.5) & (np.abs(y) <= np.sqrt(3) / 2))
     w_left_tri = np.where((x <= -0.5) & (x >= -1) & (absy <= (x + 1) * np.sqrt(3)))
     w_right_tri = np.where((x >= 0.5) & (x <= 1) & (absy <= (1 - x) * np.sqrt(3)))
-    aperture[w_rect] = 1
-    aperture[w_left_tri] = 1
-    aperture[w_right_tri] = 1
+    aperture = index_update(aperture,w_rect,1)
+    aperture = index_update(aperture,w_left_tri,1)
+    aperture = index_update(aperture,w_right_tri,1)
+
+    # aperture[w_rect] = 1
+    # aperture[w_left_tri] = 1
+    # aperture[w_right_tri] = 1
 
     if vertical:
         return aperture.transpose()
