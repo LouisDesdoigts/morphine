@@ -15,7 +15,7 @@ import matplotlib
 import astropy.io.fits as fits
 import astropy.units as u
 
-from .matrixDFT import MatrixFourierTransform
+from .matrixDFT import MatrixFourierTransform, minimal_dft
 from . import utils
 from . import conf
 from . import accel_math
@@ -3256,3 +3256,119 @@ class Detector(OpticalElement):
     #                                                                        pixelscale))
 
     #     return new_pixelscale
+
+
+'''--------------------------------------
+Copied from Xara/Pysco
+--------------------------------------'''
+
+mas2rad = arcsec2rad/1000.
+dtor = np.pi/180.0
+i2pi = 1j*2.0*np.pi
+
+
+def super_gauss(xs, ys, x0, y0, w):
+    ''' Returns an 2D super-Gaussian function
+    ------------------------------------------
+    Parameters:
+    - (xs, ys) : array size
+    - (x0, y0) : center of the Super-Gaussian
+    - w        : width of the Super-Gaussian 
+    ------------------------------------------ '''
+
+    x = np.outer(np.arange(xs), np.ones(ys))-x0
+    y = np.outer(np.ones(xs), np.arange(ys))-y0
+    dist = np.sqrt(x**2 + y**2)
+
+    gg = np.exp(-(dist/w)**4)
+    return gg
+
+def window_image(image,wrad):
+    isz = image.shape[0]
+    return super_gauss(isz, isz, isz/2, isz/2, wrad)
+
+def calc_uv_wf(wavefront,opsys,npix=128,wavelength=2.0e-6,return_coords=False):
+    nlamd = arcsec2rad*wavefront.pixelscale * wavefront.shape[0] / wavelength*2*opsys.planes[0].pupil_diam
+    pupil = wavefront.intensity
+    return calc_uv(wavefront.intensity,wavefront.pixelscale,opsys.planes[0].pupil_diam,wavelength,npix=npix,return_coords=return_coords)
+
+
+def calc_uv(image,pixelscale,pupil_diam,wavelength,npix=128,return_coords=False):
+    nlamd = arcsec2rad*pixelscale * image.shape[0] / wavelength*2*pupil_diam
+    if return_coords == True:
+        x = np.linspace(-pupil_diam,pupil_diam,npix)
+        coords = np.meshgrid(x,x)
+        return minimal_dft(image.astype('complex64'), nlamd, npix), coords
+    else:
+        return minimal_dft(image.astype('complex64'), nlamd, npix)
+
+def cvis_binary(u, v, wavel, p, detpa=None):
+    ''' Calc. complex vis measured by an array for a binary star
+    ----------------------------------------------------------------
+    p: 3-component vector (+2 optional), the binary "parameters":
+    - p[0] = sep (mas)
+    - p[1] = PA (deg) E of N.
+    - p[2] = contrast ratio (primary/secondary)
+    
+    optional:
+    - p[3] = angular size of primary (mas)
+    - p[4] = angular size of secondary (mas)
+    - u,v: baseline coordinates (meters)
+    - wavel: wavelength (meters)
+    - detpa: detector position angle (degrees)
+    ---------------------------------------------------------------- '''
+    if detpa is None:
+        th0 = 0.0
+    else:
+        th0 = detpa * dtor
+        
+    p = np.array(p)
+    # relative locations
+    th = p[1] * dtor
+    ddec =  mas2rad*(p[0] * np.cos(th + th0))
+    dra  = -mas2rad*(p[0] * np.sin(th + th0))
+
+    # baselines into number of wavelength
+    x = np.hypot(u,v)/wavel
+
+    # decompose into two "luminosity"
+    l2 = 1. / (p[2] + 1)
+    l1 = 1 - l2
+
+    # phase-factor
+    phi = np.exp(-i2pi*(u*dra + v*ddec)/wavel)
+
+    # optional effect of resolved individual sources
+    if p.size == 5:
+        th1, th2 = mas2rad*(p[3]), mas2rad*(p[4])
+        v1 = 2*j1(np.pi*th1*x)/(np.pi*th1*x)
+        v2 = 2*j1(np.pi*th2*x)/(np.pi*th2*x)
+    else:
+        v1 = np.ones(u.size, dtype=u.dtype)
+        v2 = np.ones(u.size, dtype=u.dtype)
+
+    cvis = l1 * v1 + l2 * v2 * phi
+
+    return cvis
+
+
+def phase_binary(u, v, wavel, p, deg=True):
+    ''' Calculate the phases observed by an array on a binary star
+    ----------------------------------------------------------------
+    p: 3-component vector (+2 optional), the binary "parameters":
+    - p[0] = sep (mas)
+    - p[1] = PA (deg) E of N.
+    - p[2] = contrast ratio (primary/secondary)
+    
+    optional:
+    - p[3] = angular size of primary (mas)
+    - p[4] = angular size of secondary (mas)
+    - u,v: baseline coordinates (meters)
+    - wavel: wavelength (meters)
+    ---------------------------------------------------------------- '''
+    cvis = cvis_binary(u,v,wavel, p)
+    phase = np.angle(cvis)
+    if deg:
+        return np.mod(180./np.pi*phase + 10980., 360.) - 180.0
+    else:
+        return phase
