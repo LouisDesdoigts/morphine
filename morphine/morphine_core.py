@@ -7,6 +7,7 @@ import textwrap
 from abc import ABC, abstractmethod
 
 import jax.numpy as np 
+from jax.ops import index_update
 import numpy as onp
 import matplotlib.pyplot as plt
 import scipy.ndimage.interpolation
@@ -404,7 +405,7 @@ class BaseWavefront(ABC):
         # areas with particularly low intensity
         phase = self.phase.copy()
         mean_intens = np.mean(intens[intens != 0])
-        phase[np.where(intens < mean_intens / 100)] = np.nan
+        phase = index_update(phase, np.where(intens < mean_intens / 100),np.nan)
         amp = self.amplitude
 
         y, x = self.coordinates()
@@ -2510,7 +2511,7 @@ class OpticalElement(object):
         # Evaluate the wavefront at the desired sampling and pixel scale.
         ampl = self.get_transmission(temp_wavefront)
         opd = self.get_opd(temp_wavefront).copy()
-        opd[np.where(ampl == 0)] = np.nan
+        opd = index_update(opd,np.where(ampl == 0), np.nan)
 
         # define a helper function for the actual plotting - we do it this way so
         # we can call it twice if the 'both' option is chosen. This avoids the complexities of the
@@ -2891,7 +2892,7 @@ class FITSOpticalElement(OpticalElement):
                 self.amplitude = scipy.ndimage.interpolation.rotate(self.amplitude, -rotation,  # negative = CCW
                                                                     reshape=False).clip(min=0, max=1.0)
                 wnoise = np.where((self.amplitude < 1e-3) & (self.amplitude > 0))
-                self.amplitude[wnoise] = 0
+                self.amplitude = index_update(self.amplitude,wnoise,0)
                 self.opd = scipy.ndimage.interpolation.rotate(self.opd, -rotation, reshape=False)  # negative = CCW
                 _log.info("  Rotated optic by %f degrees counter clockwise." % rotation)
                 self._rotation = rotation
