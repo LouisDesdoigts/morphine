@@ -4,9 +4,12 @@
 #  at subpixel precision. (or at least reasonably proper; no
 #  guarantees for utter mathematical exactness at machine precision.)
 
-import numpy as np
+import jax.numpy as np
+from jax import jit, vmap
+from jax.ops import index_update
 
 from . import accel_math
+accel_math._USE_NUMEXPR = False
 if accel_math._USE_NUMEXPR:
     import numexpr as ne
 
@@ -34,10 +37,7 @@ def _arc(x, y0, y1, r):
     is traversed clockwise then the area is negative, otherwise it is
     positive.
     """
-    if accel_math._USE_NUMEXPR:
-        return ne.evaluate("0.5 * r**2 * (arctan(y1/x) - arctan(y0/x))")
-    else:
-        return 0.5 * r**2 * (np.arctan(y1/x) - np.arctan(y0/x))
+    return 0.5 * r**2 * (np.arctan(y1/x) - np.arctan(y0/x))
 
 def _chord(x, y0, y1):
     """
@@ -62,69 +62,69 @@ def _oneside(x, y0, y1, r):
     if np.isscalar(y0): y0 = np.asarray(y0)
     if np.isscalar(y1): y1 = np.asarray(y1)
     sx = x.shape
-    ans = np.zeros(sx, dtype=np.float)
-    yh = np.zeros(sx, dtype=np.float)
+    ans = np.zeros(sx, dtype=np.float32)
+    yh = np.zeros(sx, dtype=np.float32)
     to = (abs(x) >= r)
     ti = (abs(x) < r)
     if np.any(to):
-        ans[to] = _arc(x[to], y0[to], y1[to], r)
+        ans = index_update(ans,to,_arc(x[to], y0[to], y1[to], r))
     if not np.any(ti):
         return ans
 
-    yh[ti] = np.sqrt(r**2 - x[ti]**2)
+    yh = index_update(yh,ti,np.sqrt(r**2 - x[ti]**2))
 
     i = ((y0 <= -yh) & ti)
     if np.any(i):
 
         j = ((y1 <= -yh) & i)
         if np.any(j):
-            ans[j] = _arc(x[j], y0[j], y1[j], r)
+            ans = index_update(ans,j,_arc(x[j], y0[j], y1[j], r))
 
         j = ((y1 > -yh) & (y1 <= yh) & i)
         if np.any(j):
-            ans[j] = _arc(x[j], y0[j], -yh[j], r) + \
-                     _chord(x[j], -yh[j], y1[j])
+            ans = index_update(ans,j,_arc(x[j], y0[j], -yh[j], r) + \
+                     _chord(x[j], -yh[j], y1[j]))
 
         j = ((y1 > yh) & i)
         if np.any(j):
-            ans[j] = _arc(x[j], y0[j], -yh[j], r) + \
+            ans = index_update(ans,j,_arc(x[j], y0[j], -yh[j], r) + \
                      _chord(x[j], -yh[j], yh[j]) + \
-                     _arc(x[j], yh[j], y1[j], r)
+                     _arc(x[j], yh[j], y1[j], r))
 
     i = ((y0 > -yh) & (y0 < yh) & ti)
     if np.any(i):
 
         j = ((y1 <= -yh) & i)
         if np.any(j):
-            ans[j] = _chord(x[j], y0[j], -yh[j]) + \
-                     _arc(x[j], -yh[j], y1[j], r)
+            ans = index_update(ans,j,_chord(x[j], y0[j], -yh[j]) + \
+                     _arc(x[j], -yh[j], y1[j], r))
 
         j = ((y1 > -yh) & (y1 <= yh) & i)
         if np.any(j):
-            ans[j] = _chord(x[j], y0[j], y1[j])
+            ans = index_update(ans,j,_chord(x[j], y0[j], y1[j]))
 
         j = ((y1 > yh) & i)
         if np.any(j):
-            ans[j] = _chord(x[j], y0[j], yh[j]) + \
-                     _arc(x[j], yh[j], y1[j], r)
+            ans = index_update(ans,j,_chord(x[j], y0[j], yh[j]) + \
+                     _arc(x[j], yh[j], y1[j], r))
 
     i = ((y0 >= yh) & ti)
     if np.any(i):
 
         j = ((y1 <= -yh) & i)
         if np.any(j):
-            ans[j] = _arc(x[j], y0[j], yh[j], r) + \
+            ans = index_update(ans,j,_arc(x[j], y0[j], yh[j], r) + \
                      _chord(x[j], yh[j], -yh[j]) + \
-                     _arc(x[j], -yh[j], y1[j], r)
+                     _arc(x[j], -yh[j], y1[j], r))
 
         j = ((y1 > -yh) & (y1 <= yh) & i)
         if np.any(j):
-            ans[j] = _arc(x[j], y0[j], yh[j], r) + \
-                     _chord(x[j], yh[j], y1[j])
+            ans = index_update(ans,j,_arc(x[j], y0[j], yh[j], r) + \
+                     _chord(x[j], yh[j], y1[j]))
 
         j = ((y1 > yh) & i)
         if np.any(j):
-            ans[j] = _arc(x[j], y0[j], y1[j], r)
+            ans = index_update(ans,j,_arc(x[j], y0[j], y1[j], r))
     return ans
 
 def _intarea(xc, yc, r, x0, x1, y0, y1):
@@ -198,7 +198,7 @@ def filled_circle_aa(shape, xcenter, ycenter, radius, xarray=None, yarray=None,
 
 
     r = np.sqrt( (xarray-xcenter)**2 + (yarray-ycenter)**2)
-    array[r < radius ]  = fillvalue
+    array = index_update(array,r < radius,fillvalue)
 
     pixscale = np.abs(xarray[0,1] - xarray[0,0])
     area_per_pix = pixscale**2
@@ -210,7 +210,7 @@ def filled_circle_aa(shape, xcenter, ycenter, radius, xarray=None, yarray=None,
 
     weights = pixwt(xcenter, ycenter, radius, xarray[border], yarray[border])
 
-    array[border] = weights *fillvalue/area_per_pix
+    array = index_update(array,border,weights *fillvalue/area_per_pix)
 
 
     if clip:

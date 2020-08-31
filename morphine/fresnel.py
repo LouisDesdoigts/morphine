@@ -14,7 +14,7 @@ if accel_math._USE_NUMEXPR:
     import numexpr as ne
     pi = np.pi  # needed for evaluation inside numexpr strings.
 
-_log = logging.getLogger('morphine')
+# _log = logging.getLogger('morphine')
 
 
 __all__ = ['QuadPhase', 'QuadraticLens', 'FresnelWavefront', 'FresnelOpticalSystem']
@@ -68,13 +68,13 @@ class QuadPhase(morphine.optics.AnalyticOpticalElement):
         """
 
         y, x = wave.coordinates()
-        _log.debug("Applying spherical phase curvature ={0:0.2e}".format(self.z))
-        _log.debug("Applying spherical lens phase ={0:0.2e}".format(1.0 / self.z))
+        # _log.debug("Applying spherical phase curvature ={0:0.2e}".format(self.z))
+        # _log.debug("Applying spherical lens phase ={0:0.2e}".format(1.0 / self.z))
         z = self._z_m  # numexpr can't evaluate self.
         if (z == np.inf) | (z == -np.inf):
             # Phasor should be 1
             # OPD should be flat
-            _log.debug("infinite radius of curvature -> quad phase becomes 0")
+            # _log.debug("infinite radius of curvature -> quad phase becomes 0")
             return 0
         opd = (x ** 2 + y ** 2)  / (2.0 *z)
 
@@ -133,7 +133,7 @@ class QuadraticLens(QuadPhase):
                            name=name,
                            **kwargs)
         self.fl = f_lens
-        _log.debug("Initialized: " + self.name + ", fl ={0:0.2e}".format(self.fl))
+        # _log.debug("Initialized: " + self.name + ", fl ={0:0.2e}".format(self.fl))
 
     def __str__(self):
         return "Lens: {0}, with focal length {1}".format(self.name, self.fl)
@@ -254,14 +254,16 @@ class FresnelWavefront(BaseWavefront):
                 self.oversample,
                 self.wavefront.shape
             )
-            _log.debug(logmsg)
+            # _log.debug(logmsg)
 
             self.history.append(logmsg)
         else:
-            _log.debug("Skipping oversampling, oversample < 1 or already padded ")
+            pass
+            # _log.debug("Skipping oversampling, oversample < 1 or already padded ")
 
         if self.oversample < 2:
-            _log.warning("Oversampling > 2x suggested for reliable results in Fresnel propagation.")
+            pass
+            # _log.warning("Oversampling > 2x suggested for reliable results in Fresnel propagation.")
 
         self._y, self._x = np.indices(self.shape, dtype=float)
         self._y = self._y - (self.wavefront.shape[0]) / 2.0
@@ -461,7 +463,7 @@ class FresnelWavefront(BaseWavefront):
             if not np.isfinite(self.focal_length):
                 raise ValueError("Cannot convert to angular units for a beam with infinite focal length")
             platescale = (1 / self.focal_length)/arcsec2rad
-            _log.debug("Converting to angular coords using plate scale = {}".format(platescale))
+            # _log.debug("Converting to angular coords using plate scale = {}".format(platescale))
             y *= platescale
             x *= platescale
 
@@ -508,8 +510,8 @@ class FresnelWavefront(BaseWavefront):
         y, x = self.coordinates()
         k = np.pi * 2.0 / self.wavelength
         s = self.n * self.pixelscale  # S is "simulation size" and has length of meters
-        _log.debug(
-            "Propagation Parameters: k={0:0.2e},".format(k) + "S={0:0.2e},".format(s) + "z={0:0.2e},".format(z_direct))
+        # _log.debug(
+            # "Propagation Parameters: k={0:0.2e},".format(k) + "S={0:0.2e},".format(s) + "z={0:0.2e},".format(z_direct))
 
         # TODO the following exponential code could be accelerated with numexpr
         quadphase_1st = np.exp(1.0j * k * (x ** 2 + y ** 2) / (2 * z_direct))  # eq. 6.68
@@ -556,7 +558,7 @@ class FresnelWavefront(BaseWavefront):
             separation distance of this optic relative to the prior optic in the system.
         """
         msg = "  Propagating wavefront to {0} after distance {1} ".format(str(optic), distance)
-        _log.debug(msg)
+        # _log.debug(msg)
         self.history.append(msg)
         self.angular_coordinates = False  # coordinates must be in meters for propagation
 
@@ -608,11 +610,11 @@ class FresnelWavefront(BaseWavefront):
         if isinstance(dz, u.quantity.Quantity):
             z_direct = dz  # convert to meters.
         else:
-            _log.warning("z= {0:0.2e}, has no units, assuming meters ".format(dz))
+            # _log.warning("z= {0:0.2e}, has no units, assuming meters ".format(dz))
             z_direct = dz
 
         if np.abs(dz) < 1e-10:
-            _log.debug("Skipping small dz = " + str(dz))
+            # _log.debug("Skipping small dz = " + str(dz))
             # TODO: make this scale with physics and only skip un-interesting
             # distances instead of this arbitrary length -douglase
             return
@@ -652,14 +654,14 @@ class FresnelWavefront(BaseWavefront):
         ----------
          Lawrence eq. 83,88
         """
-        _log.debug("Waist to Spherical propagation, dz=" + str(dz))
+        # _log.debug("Waist to Spherical propagation, dz=" + str(dz))
 
         if self.spherical:
             raise RuntimeError(
                 '_propagate_wts can only start from a planar wavefront, but was called with a spherical one.')
 
         if dz == 0:
-            _log.error("Waist to Spherical propagation stopped, no change in distance.")
+            # _log.error("Waist to Spherical propagation stopped, no change in distance.")
             return
 
         self *= _QuadPhaseShifted(dz)
@@ -697,10 +699,10 @@ class FresnelWavefront(BaseWavefront):
             raise RuntimeError(
                 '_propagate_stw can only start from a spherical wavefront, but was called with a planar one.')
 
-        _log.debug("Spherical to Waist propagation, dz=" + str(dz))
+        # _log.debug("Spherical to Waist propagation, dz=" + str(dz))
 
         if dz == 0:
-            _log.error("Spherical to Waist propagation stopped, no change in distance.")
+            # _log.error("Spherical to Waist propagation stopped, no change in distance.")
             return
 
         if dz > 0:
@@ -751,18 +753,18 @@ class FresnelWavefront(BaseWavefront):
             self.display('both', colorbar=True, title="Starting Surface")
 
         # self.wavefront = np.fft.fftshift(self.wavefront)
-        _log.debug("Beginning Fresnel Prop. Waist at z = " + str(self.z_w0))
+        # _log.debug("Beginning Fresnel Prop. Waist at z = " + str(self.z_w0))
 
         if not self.spherical:
             if self.planar_range(z):
                 # Plane waves inside planar range:  use plane-to-plane
-                _log.debug('  Plane to Plane Regime, dz=' + str(delta_z))
-                _log.debug('  Constant Pixelscale: {}'.format(self.pixelscale))
+                # _log.debug('  Plane to Plane Regime, dz=' + str(delta_z))
+                # _log.debug('  Constant Pixelscale: {}'.format(self.pixelscale))
                 self._propagate_ptp(delta_z)
             else:
                 # Plane wave to spherical. First use PTP to the waist, then WTS to Spherical
-                _log.debug('  Plane to Spherical, inside Z_R to outside Z_R')
-                _log.debug('  Starting Pixelscale: {}'.format(self.pixelscale))
+                # _log.debug('  Plane to Spherical, inside Z_R to outside Z_R')
+                # _log.debug('  Starting Pixelscale: {}'.format(self.pixelscale))
                 self._propagate_ptp(self.z_w0 - self.z)
                 if display_intermed:
                     plt.figure()
@@ -771,7 +773,7 @@ class FresnelWavefront(BaseWavefront):
         else:
             if self.planar_range(z):
                 # Spherical to plane. First use STW to the waist, then PTP to the desired plane
-                _log.debug('  Spherical to Plane Regime, outside Z_R to inside Z_R')
+                # _log.debug('  Spherical to Plane Regime, outside Z_R to inside Z_R')
                 self._propagate_stw(self.z_w0 - self.z)
                 if display_intermed:
                     plt.figure()
@@ -779,10 +781,10 @@ class FresnelWavefront(BaseWavefront):
                 self._propagate_ptp(z - self.z_w0)
             else:
                 # Spherical to Spherical. First STW to the waist, then WTS to the desired spherical surface
-                _log.debug('  Spherical to Spherical, Outside Z_R to waist (z_w0) to outside Z_R')
-                _log.debug('  Starting Pixelscale: {}'.format(self.pixelscale))
+                # _log.debug('  Spherical to Spherical, Outside Z_R to waist (z_w0) to outside Z_R')
+                # _log.debug('  Starting Pixelscale: {}'.format(self.pixelscale))
                 self._propagate_stw(self.z_w0 - self.z)
-                _log.debug('  Intermediate Pixelscale: {}'.format(self.pixelscale))
+                # _log.debug('  Intermediate Pixelscale: {}'.format(self.pixelscale))
 
                 if display_intermed:
                     plt.figure()
@@ -794,7 +796,7 @@ class FresnelWavefront(BaseWavefront):
 
         # self.wavefront = np.fft.fftshift(self.wavefront)
         self.planetype = PlaneType.intermediate
-        _log.debug("------ Propagated to plane of type " + str(self.planetype) + " at z = {0:0.2e} ------".format(z))
+        # _log.debug("------ Propagated to plane of type " + str(self.planetype) + " at z = {0:0.2e} ------".format(z))
 
     def __imul__(self, optic):
         """Multiply a Wavefront by an OpticalElement or scalar"""
@@ -825,59 +827,59 @@ class FresnelWavefront(BaseWavefront):
 
         """
 
-        _log.debug("------ Applying Lens: " + str(optic.name) + " ------")
-        _log.debug("  Pre-Lens Beam Parameters: " + self.param_str)
+        # _log.debug("------ Applying Lens: " + str(optic.name) + " ------")
+        # _log.debug("  Pre-Lens Beam Parameters: " + self.param_str)
 
         # calculate beam radius at current surface
         spot_radius = self.spot_radius()
-        _log.debug("  Beam radius at " + str(optic.name) + " ={0:0.2e}".format(spot_radius))
+        # _log.debug("  Beam radius at " + str(optic.name) + " ={0:0.2e}".format(spot_radius))
 
         # Is the incident beam planar or spherical?
         # We decided based on whether the last waist is outside the rayleigh distance.
         #  I.e. here we neglect small curvature just away from the waist
         # Based on that, determine the radius of curvature of the output beam
         if np.abs(self.z_w0 - self.z) > self.rayleigh_factor * self.z_r:
-            _log.debug("spherical beam")
-            _log.debug(self.param_str)
+            # _log.debug("spherical beam")
+            # _log.debug(self.param_str)
             r_input_beam = self.z - self.z_w0
             r_output_beam = 1.0 / (1.0 / self.r_c() - 1.0 / optic.fl)
-            _log.debug(
-                " input curved wavefront and " + str(optic.name) + " has output beam curvature of ={0:0.2e}".format(
-                    r_output_beam))
+            # _log.debug(
+                # " input curved wavefront and " + str(optic.name) + " has output beam curvature of ={0:0.2e}".format(
+                #     r_output_beam))
         else:
             r_input_beam = np.inf
             # we are at a focus or pupil, so the new optic is the only curvature of the beam
             r_output_beam = -1 * optic.fl
-            _log.debug(
-                " input flat wavefront and " + str(optic.name) + " has output beam curvature of ={0:0.2e}".format(
-                    r_output_beam))
+            # _log.debug(
+                # " input flat wavefront and " + str(optic.name) + " has output beam curvature of ={0:0.2e}".format(
+                #     r_output_beam))
 
         # update the wavefront parameters to the post-lens beam waist
         if self.r_c() == optic.fl:
             self.z_w0 = self.z
             self.w_0 = spot_radius
-            _log.debug(str(optic.name) + " has a flat output wavefront")
+            # _log.debug(str(optic.name) + " has a flat output wavefront")
         else:
             self.z_w0 = -r_output_beam / (
                 1.0 + (self.wavelength * r_output_beam / (np.pi * spot_radius ** 2)) ** 2) + self.z
             self.w_0 = spot_radius / np.sqrt(1.0 + (np.pi * spot_radius ** 2 / (self.wavelength * r_output_beam)) ** 2)
-            _log.debug(str(optic.name) + " has a curvature of ={0:0.2e}".format(r_output_beam))
-            _log.debug(str(optic.name) + " has a curved output wavefront, with waist at {}".format(self.z_w0))
+            # _log.debug(str(optic.name) + " has a curvature of ={0:0.2e}".format(r_output_beam))
+            # _log.debug(str(optic.name) + " has a curved output wavefront, with waist at {}".format(self.z_w0))
 
-        _log.debug("Post Optic Parameters:" + self.param_str)
+        # _log.debug("Post Optic Parameters:" + self.param_str)
 
         # Update the focal length of the beam. This is closely related to but tracked separately from
         # the beam waist and radius of curvature; we keep track of it to use in optional conversion
         # of coordinates to angular units.
         if not np.isfinite(self.focal_length):
             self.focal_length = 1 * optic.fl
-            _log.debug("Set output beam focal length to {}".format(self.focal_length))
+            # _log.debug("Set output beam focal length to {}".format(self.focal_length))
         else:
             # determine magnification as the change in curvature of this optic
             mag = r_output_beam / r_input_beam
             self.focal_length *= mag
-            _log.debug("Magnification: {}  from R_in = {}, R_out = {}".format(mag, r_input_beam, r_output_beam))
-            _log.debug("Output beam focal length is now {}".format(self.focal_length))
+            # _log.debug("Magnification: {}  from R_in = {}, R_out = {}".format(mag, r_input_beam, r_output_beam))
+            # _log.debug("Output beam focal length is now {}".format(self.focal_length))
 
         self.waists_z.append(self.z_w0)
         self.waists_w0.append(self.w_0)
@@ -890,14 +892,14 @@ class FresnelWavefront(BaseWavefront):
             # What we have done above is sufficient for Gaussian beam propagation,
             # and if that's all we're interested in we can skip updating the
             # wavefront array.
-            _log.debug("------ Optic: " + str(optic.name) + " applied, for Gaussian beam parameters only ------")
+            # _log.debug("------ Optic: " + str(optic.name) + " applied, for Gaussian beam parameters only ------")
             return
 
         # Now we need to figure out the phase term to apply to the wavefront
         # data array
         if not self.spherical:
             if np.abs(self.z_w0 - self.z) < self.z_r:
-                _log.debug('Near-field, Plane-to-Plane Propagation.')
+                # _log.debug('Near-field, Plane-to-Plane Propagation.')
                 z_eff = 1 * optic.fl
 
             else:
@@ -906,16 +908,16 @@ class FresnelWavefront(BaseWavefront):
                 # e^(1/z) = e^(1/x)*e^(1/y) = e^(1/x+1/y) -> 1/z = 1/x + 1/y
                 # z = 1/(1/x+1/y) = xy/x+y
                 z_eff = 1.0 / (1.0 / optic.fl + 1.0 / (self.z - self.z_w0))
-                _log.debug('Inside Rayleigh distance to Outside Rayleigh distance.')
+                # _log.debug('Inside Rayleigh distance to Outside Rayleigh distance.')
 
                 self.spherical = True
 
         else:  # spherical input wavefront
             if np.abs(self.z_w0 - self.z) > self.z_r:
-                _log.debug('Spherical to Spherical wavefront propagation.')
-                _log.debug("1/fl={0:0.4e}".format(1.0 / optic.fl))
-                _log.debug("1.0/(R_input_beam)={0:0.4e}".format(1.0 / r_input_beam))
-                _log.debug("1.0/(self.z-self.z_w0)={0:0.4e}".format(1.0 / (self.z - self.z_w0)))
+                # _log.debug('Spherical to Spherical wavefront propagation.')
+                # _log.debug("1/fl={0:0.4e}".format(1.0 / optic.fl))
+                # _log.debug("1.0/(R_input_beam)={0:0.4e}".format(1.0 / r_input_beam))
+                # _log.debug("1.0/(self.z-self.z_w0)={0:0.4e}".format(1.0 / (self.z - self.z_w0)))
 
                 if (self.z - self.z_w0) == 0:
                     z_eff = 1.0 / (1.0 / optic.fl + 1.0 / (self.z - self.z_w0))
@@ -923,7 +925,7 @@ class FresnelWavefront(BaseWavefront):
                     z_eff = 1.0 / (1.0 / optic.fl + 1.0 / (self.z - self.z_w0) - 1.0 / r_input_beam)
 
             else:
-                _log.debug('Spherical to Planar.')
+                # _log.debug('Spherical to Planar.')
                 z_eff = 1.0 / (1.0 / optic.fl - 1.0 / r_input_beam)
                 self.spherical = False
 
@@ -931,7 +933,7 @@ class FresnelWavefront(BaseWavefront):
         effective_optic = QuadPhase(-z_eff, name=optic.name)
         self *= effective_optic
 
-        _log.debug("------ Optic: " + str(optic.name) + " applied ------")
+        # _log.debug("------ Optic: " + str(optic.name) + " applied ------")
 
     def _resample_wavefront_pixelscale(self, detector):
         """ Resample a Fresnel wavefront to a desired detector sampling.
@@ -957,8 +959,8 @@ class FresnelWavefront(BaseWavefront):
         pixscale_ratio = (self.pixelscale / detector.pixelscale).decompose()
 
         if np.abs(pixscale_ratio - 1.0) < 1e-3:
-            _log.debug("Wavefront is already at desired pixel scale "
-                       "{:.4g}.  No resampling needed.".format(self.pixelscale))
+            # _log.debug("Wavefront is already at desired pixel scale "
+                       # "{:.4g}.  No resampling needed.".format(self.pixelscale))
             self.wavefront = utils.pad_or_crop_to_shape(self.wavefront, detector.shape)
             return
 
@@ -1069,7 +1071,8 @@ class FresnelOpticalSystem(BaseOpticalSystem):
             self.distances.insert(index, distance)
 
         if self.verbose:
-            _log.info("Added optic: {0} after separation: {1:.2e} ".format(self.planes[-1].name, distance))
+            pass
+            # _log.info("Added optic: {0} after separation: {1:.2e} ".format(self.planes[-1].name, distance))
 
         return optic
 
@@ -1090,8 +1093,8 @@ class FresnelOpticalSystem(BaseOpticalSystem):
         """
         super(FresnelOpticalSystem, self).add_detector(pixelscale=pixelscale, fov_pixels=fov_pixels)
         self.distances.append(distance)
-        if self.verbose:
-            _log.info("Added detector: {0} after separation: {1:.2e} ".format(self.planes[-1].name, distance))
+        # if self.verbose:
+            # _log.info("Added detector: {0} after separation: {1:.2e} ".format(self.planes[-1].name, distance))
 
     # @utils.quantity_input(wavelength=u.meter)
     def input_wavefront(self, wavelength=1e-6):
@@ -1114,11 +1117,11 @@ class FresnelOpticalSystem(BaseOpticalSystem):
         oversample = int(np.round(1 / self.beam_ratio))
         inwave = FresnelWavefront(self.pupil_diameter / 2, wavelength=wavelength,
                                   npix=self.npix, oversample=oversample)
-        _log.debug(
-            "Creating input wavefront with wavelength={0} microns,"
-            "npix={1}, diam={3}, pixel scale={2}".format(
-                wavelength * 1e6, self.npix, self.pupil_diameter / (self.npix), self.pupil_diameter
-            ))
+        # _log.debug(
+            # "Creating input wavefront with wavelength={0} microns,"
+            # "npix={1}, diam={3}, pixel scale={2}".format(
+            #     wavelength * 1e6, self.npix, self.pupil_diameter / (self.npix), self.pupil_diameter
+            # ))
         inwave._display_hint_expected_nplanes = len(self)     # For displaying a multi-step calculation nicely
         return inwave
 
@@ -1142,7 +1145,7 @@ class FresnelOpticalSystem(BaseOpticalSystem):
             # Normalize if appropriate:
             if normalize.lower() == 'first' and wavefront.current_plane_index == 1:  # set entrance plane to 1.
                 wavefront.normalize()
-                _log.debug("normalizing at first plane (entrance pupil) to 1.0 total intensity")
+                # _log.debug("normalizing at first plane (entrance pupil) to 1.0 total intensity")
             elif normalize.lower() == 'first=2' and wavefront.current_plane_index == 1:
                 # this undocumented option is present only for testing/validation purposes
                 wavefront.normalize()
@@ -1152,15 +1155,16 @@ class FresnelOpticalSystem(BaseOpticalSystem):
                     np.asarray([p.planetype is PlaneType.pupil for p in self.planes]))[0].max() + 1
                 if wavefront.current_plane_index == last_pupil_plane_index:
                     wavefront.normalize()
-                    _log.debug(
-                        "normalizing at exit pupil (plane {0}) to 1.0 total intensity".format(wavefront.current_plane_index))
+                    # _log.debug(
+                        # "normalizing at exit pupil (plane {0}) to 1.0 total intensity".format(wavefront.current_plane_index))
             elif normalize.lower() == 'last' and wavefront.current_plane_index == len(self.planes):
                 wavefront.normalize()
-                _log.debug("normalizing at last plane to 1.0 total intensity")
+                # _log.debug("normalizing at last plane to 1.0 total intensity")
 
             # Optional outputs:
             if morphine.conf.enable_flux_tests:
-                _log.debug("  Flux === " + str(wavefront.total_intensity))
+                pass
+                # _log.debug("  Flux === " + str(wavefront.total_intensity))
 
             if return_intermediates:  # save intermediate wavefront, summed for polychromatic if needed
                 intermediate_wfs.append(wavefront.copy())
@@ -1173,11 +1177,11 @@ class FresnelOpticalSystem(BaseOpticalSystem):
 
                 if morphine.conf.enable_speed_tests:
                     t1 = time.time()
-                    _log.debug("\tTIME %f s\t for displaying the wavefront." % (t1 - t0))
+                    # _log.debug("\tTIME %f s\t for displaying the wavefront." % (t1 - t0))
 
         if morphine.conf.enable_speed_tests:
             t_stop = time.time()
-            _log.debug("\tTIME %f s\tfor propagating one wavelength" % (t_stop - t_start))
+            # _log.debug("\tTIME %f s\tfor propagating one wavelength" % (t_stop - t_start))
 
         if return_intermediates:
             return wavefront, intermediate_wfs
