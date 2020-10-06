@@ -425,7 +425,7 @@ class FresnelWavefront(BaseWavefront):
         # Direct propagations.
 
         pixelscale_mpix = pixelscale
-        if not np.isscalar(pixelscale_mpix):
+        if np.size(pixelscale_mpix) !=1:
             pixel_scale_x, pixel_scale_y = pixelscale_mpix
         else:
             pixel_scale_x, pixel_scale_y = pixelscale_mpix, pixelscale_mpix
