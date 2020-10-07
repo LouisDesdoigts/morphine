@@ -347,13 +347,14 @@ class FresnelWavefront(BaseWavefront):
         """
         Apply normalized forward 2D Fast Fourier Transform to wavefront
         """
-        self.wavefront = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.wavefront)))
+#         self.wavefront = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.wavefront)))
+        self.wavefront = np.fft.fft2(self.wavefront)
 
     def _inv_fft(self):
         """
         Apply normalized Inverse 2D Fast Fourier Transform to wavefront
         """
-        self.wavefront = np.fft.ifftshift(np.fft.ifft2(np.fft.ifftshift(self.wavefront)))
+        self.wavefront = np.fft.ifft2(self.wavefront)
 
     def r_c(self, z=None):
         """
@@ -752,7 +753,7 @@ class FresnelWavefront(BaseWavefront):
             plt.figure()
             self.display('both', colorbar=True, title="Starting Surface")
 
-        # self.wavefront = np.fft.fftshift(self.wavefront)
+        self.wavefront = np.fft.fftshift(self.wavefront)
         # _log.debug("Beginning Fresnel Prop. Waist at z = " + str(self.z_w0))
 
         if not self.spherical:
@@ -794,7 +795,7 @@ class FresnelWavefront(BaseWavefront):
             plt.figure()
             self.display('both', colorbar=True)
 
-        # self.wavefront = np.fft.fftshift(self.wavefront)
+        self.wavefront = np.fft.fftshift(self.wavefront)
         self.planetype = PlaneType.intermediate
         # _log.debug("------ Propagated to plane of type " + str(self.planetype) + " at z = {0:0.2e} ------".format(z))
 
@@ -956,7 +957,7 @@ class FresnelWavefront(BaseWavefront):
         if self.angular_coordinates:
             raise NotImplementedError("Resampling to detector doesn't yet work in angular coordinates for Fresnel.")
 
-        pixscale_ratio = (self.pixelscale / detector.pixelscale).decompose()
+        pixscale_ratio = (self.pixelscale / detector.pixelscale)
 
         if np.abs(pixscale_ratio - 1.0) < 1e-3:
             # _log.debug("Wavefront is already at desired pixel scale "

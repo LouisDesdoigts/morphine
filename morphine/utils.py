@@ -1164,7 +1164,8 @@ def pad_or_crop_to_shape(array, target_shape):
             [lx_w, ly_w]) + "; will attempt to zero-pad the array")
 
         resampled_array = np.zeros(shape=(lx_w, ly_w), dtype=array.dtype)
-        resampled_array[border_x:border_x + lx, border_y:border_y + ly] = array
+#         resampled_array[border_x:border_x + lx, border_y:border_y + ly] = array
+        resampled_array = index_update(resampled_array, index[border_x:border_x + lx, border_y:border_y + ly], array)
         _log.debug("  Padded with a {:d} x {:d} border to "
                    " match the desired shape".format(border_x, border_y))
 

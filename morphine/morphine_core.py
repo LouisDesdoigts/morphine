@@ -693,15 +693,15 @@ class BaseWavefront(ABC):
         import scipy.interpolate
 
         pixscale_ratio = (self.pixelscale / detector.pixelscale)
-        _log.info("Resampling wavefront to detector with {} pixels and {}. Zoom factor is {:.5f}".format(
-            detector.shape, detector.pixelscale, pixscale_ratio))
+#         _log.info("Resampling wavefront to detector with {} pixels and {}. Zoom factor is {:.5f}".format(
+#             detector.shape, detector.pixelscale, pixscale_ratio))
 
-        _log.debug("Wavefront pixel scale:        {:.3f}".format(self.pixelscale.to(detector.pixelscale.unit)))
-        _log.debug("Desired detector pixel scale: {:.3f}".format(detector.pixelscale))
-        _log.debug("Wavefront FOV:        {} pixels, {:.3f}".format(self.shape,
-                                                                    self.shape[0]*self.pixelscale))
-        _log.debug("Desired detector FOV: {} pixels, {:.3f}".format(detector.shape,
-                                                                    detector.shape[0]*detector.pixelscale))
+#         _log.debug("Wavefront pixel scale:        {:.3f}".format(self.pixelscale.to(detector.pixelscale.unit)))
+#         _log.debug("Desired detector pixel scale: {:.3f}".format(detector.pixelscale))
+#         _log.debug("Wavefront FOV:        {} pixels, {:.3f}".format(self.shape,
+#                                                                     self.shape[0]*self.pixelscale))
+#         _log.debug("Desired detector FOV: {} pixels, {:.3f}".format(detector.shape,
+#                                                                     detector.shape[0]*detector.pixelscale))
 
         def make_axis(npix, step):
             """ Helper function to make coordinate axis for interpolation """
