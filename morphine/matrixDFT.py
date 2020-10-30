@@ -218,7 +218,7 @@ def matrix_dft(plane, nlamD, npix,
     norm_coeff = np.sqrt((nlamDY * nlamDX) / (npupY * npupX * npixY * npixX))
     return norm_coeff * t2
 
-def minimal_dft(plane, nlamD, npix):
+def minimal_dft_prim(plane, nlamD, npix):
     """Perform a matrix discrete Fourier transform with selectable
     output sampling and centering.
 
@@ -251,23 +251,23 @@ def minimal_dft(plane, nlamD, npix):
         inverse. If given as a tuple, interpreted as (npixY, npixX).
     """
 
-    npupY, npupX = plane.shape
+    npupY, npupX = plane.shape # 32, be careful
 
-    npixY, npixX = float(npix), float(npix)
+    npixY, npixX = 1.0*npix, 1.0*npix
 
     nlamDY, nlamDX = 1.0*nlamD, 1.0*nlamD
     
-    dU = nlamDX / float(npixX)
-    dV = nlamDY / float(npixY)
-    dX = 1.0 / float(npupX)
-    dY = 1.0 / float(npupY)
+    dU = nlamDX / (npixX)
+    dV = nlamDY / (npixY)
+    dX = 1.0 / (1.0*npupX)
+    dY = 1.0 / (1.0*npupY)
 
 
-    Xs = (np.arange(npupX, dtype=float) - float(npupX) / 2.0 + 0.5) * dX
-    Ys = (np.arange(npupY, dtype=float) - float(npupY) / 2.0 + 0.5) * dY
+    Xs = (1.0*np.arange(npupX) - (npupX) / 2.0 + 0.5) * dX
+    Ys = (1.0*np.arange(npupY) - (npupY) / 2.0 + 0.5) * dY
 
-    Us = (np.arange(npixX, dtype=float) - float(npixX) / 2.0 + 0.5) * dU
-    Vs = (np.arange(npixY, dtype=float) - float(npixY) / 2.0 + 0.5) * dV
+    Us = (1.0*np.arange(npixX) - (npixX) / 2.0 + 0.5) * dU
+    Vs = (1.0*np.arange(npixY) - (npixY) / 2.0 + 0.5) * dV
 
     XU = np.outer(Xs, Us)
     YV = np.outer(Ys, Vs)
@@ -280,7 +280,7 @@ def minimal_dft(plane, nlamD, npix):
     norm_coeff = np.sqrt((nlamDY * nlamDX) / (npupY * npupX * npixY * npixX))
     return norm_coeff * t2
 
-
+minimal_dft = jit(minimal_dft_prim,static_argnums=2)
 
 
 def matrix_idft(*args, **kwargs):
@@ -447,6 +447,4 @@ def make_pupil(scale,npix=128):
     pupil = onp.ones_like(rr)
     pupil[mask] = 0
     return pupil
-
-jit_dft = jit(minimal_dft,static_argnums=2)
 

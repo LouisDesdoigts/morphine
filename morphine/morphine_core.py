@@ -141,7 +141,7 @@ class BaseWavefront(ABC):
 
         self.current_plane_index = 0  # For tracking stages in a calculation
 
-        accel_math.update_math_settings()                   # ensure optimal propagation based on user settings
+        # accel_math.update_math_settings()                   # ensure optimal propagation based on user settings
 
     def __str__(self):
         # TODO add switches for image/pupil planes
@@ -157,12 +157,12 @@ class BaseWavefront(ABC):
     def normalize(self):
         """Set this wavefront's total intensity to 1 """
         sqrt_ti = np.sqrt(self.total_intensity)
-        if sqrt_ti == 0:
-            _log.warning("Total intensity is zero when trying to normalize the wavefront. Cannot normalize.")
-        elif not np.isfinite(sqrt_ti):
-            _log.warning("Total intensity is NaN or Inf when trying to normalize the wavefront. Cannot normalize.")
-        else:
-            self.wavefront /= sqrt_ti
+        # if sqrt_ti == 0:
+        #     _log.warning("Total intensity is zero when trying to normalize the wavefront. Cannot normalize.")
+        # elif not np.isfinite(sqrt_ti):
+        #     _log.warning("Total intensity is NaN or Inf when trying to normalize the wavefront. Cannot normalize.")
+        # else:
+        self.wavefront /= sqrt_ti
 
     def __imul__(self, optic):
         """Multiply a Wavefront by an OpticalElement or scalar"""
@@ -188,8 +188,8 @@ class BaseWavefront(ABC):
                 phasor.shape, self.wavefront.shape)
 
         self.wavefront *= phasor
-        msg = "  Multiplied WF by phasor for " + str(optic)
-        _log.debug(msg)
+        # msg = "  Multiplied WF by phasor for " + str(optic)
+        # _log.debug(msg)
         # self.history.append(msg)
         self.location = 'after ' + optic.name
         return self
@@ -638,12 +638,12 @@ class BaseWavefront(ABC):
     @property
     def intensity(self):
         """Electric field intensity of the wavefront (i.e. field amplitude squared)"""
-        if accel_math._USE_NUMEXPR:
-            w = self.wavefront
-            return np.real(np.abs(w))**2
-            # return ne.evaluate("real(abs(w))**2")
-        else:
-            return np.abs(self.wavefront) ** 2
+        # if accel_math._USE_NUMEXPR:
+        #     w = self.wavefront
+        #     return np.real(np.abs(w))**2
+        #     # return ne.evaluate("real(abs(w))**2")
+        # else:
+        return np.abs(self.wavefront) ** 2
 
     @property
     def phase(self):
@@ -787,8 +787,8 @@ class BaseWavefront(ABC):
             # self.history.append("Tilted wavefront by "
                                 # "X={:2.2}, Y={:2.2} arcsec".format(Xangle, Yangle))
 
-        else:
-            _log.warning("Wavefront.tilt() called, but requested tilt was zero. No change.")
+        # else:
+        #     _log.warning("Wavefront.tilt() called, but requested tilt was zero. No change.")
 
     def rotate(self, angle=0.0):
         """Rotate a wavefront by some amount, using spline interpolation
@@ -803,7 +803,7 @@ class BaseWavefront(ABC):
         # Huh, the ndimage rotate function does not work for complex numbers. That's weird.
         # so let's treat the real and imaginary parts individually
         # FIXME TODO or would it be better to do this on the amplitude and phase?
-        rot_real = scipy.ndimage.interpolation.rotate(self.wavefront.real, angle, reshape=False)
+        rot_real = scipy.ndimage.interpolation.rotate(self.wavefront.real, angle, reshape=False) # this won't work in Jax :/ 
         rot_imag = scipy.ndimage.interpolation.rotate(self.wavefront.imag, angle, reshape=False)
         self.wavefront = rot_real + 1.j * rot_imag
 
@@ -1699,8 +1699,8 @@ class BaseOpticalSystem(ABC):
 
         if conf.enable_speed_tests:
             t_start = time.time()
-        if self.verbose:
-            _log.info(" Propagating wavelength %.2f" % wavelength)
+        # if self.verbose:
+        #     _log.info(" Propagating wavelength %.2f" % wavelength)
         wavefront = self.input_wavefront(wavelength)
 
         kwargs = {'normalize': normalize,
@@ -1720,7 +1720,7 @@ class BaseOpticalSystem(ABC):
 
         if conf.enable_speed_tests:
             t_stop = time.time()
-            _log.debug("\tTIME %f s\tfor propagating one wavelength" % (t_stop - t_start))
+            # _log.debug("\tTIME %f s\tfor propagating one wavelength" % (t_stop - t_start))
 
         return wavefront, intermediate_wfs
 
