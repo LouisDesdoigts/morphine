@@ -280,7 +280,8 @@ def minimal_dft_prim(plane, nlamD, npix):
     norm_coeff = np.sqrt((nlamDY * nlamDX) / (npupY * npupX * npixY * npixX))
     return norm_coeff * t2
 
-minimal_dft = jit(minimal_dft_prim,static_argnums=2)
+# minimal_dft = jit(minimal_dft_prim,static_argnums=2)
+minimal_dft = minimal_dft_prim
 
 
 def matrix_idft(*args, **kwargs):
