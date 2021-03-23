@@ -169,7 +169,7 @@ class BaseWavefront(ABC):
         if isinstance(optic, CoordinateTransform):
             return self  # a coord transform doesn't actually affect the wavefront via multiplication,
             # but instead via forcing a call to rotate() or invert() in propagate_to...
-        elif np.isscalar(optic):
+        elif onp.isscalar(optic):
             self.wavefront *= optic  # it's just a scalar
             # self.history.append("Multiplied WF by scalar value " + str(optic))
             return self
@@ -296,7 +296,7 @@ class BaseWavefront(ABC):
             outfits[0].header['PIXELSCL'] = (self.pixelscale,
                                              'Scale in arcsec/pix (after oversampling)')
             fov_arcsec = self.fov*arcsec2rad
-            if np.isscalar(fov_arcsec):
+            if onp.isscalar(fov_arcsec):
                 outfits[0].header['FOV'] = (fov_arcsec, 'Field of view in arcsec (full array)')
             else:
                 outfits[0].header['FOV_X'] = (fov_arcsec[1], 'Field of view in arcsec (full array), X direction')
@@ -769,7 +769,7 @@ class BaseWavefront(ABC):
         if self.planetype == PlaneType.image:
             raise NotImplementedError("Are you sure you want to tilt a wavefront in an _IMAGE plane?")
 
-        if np.abs(Xangle) > 0 or np.abs(Yangle) > 0:
+        if onp.abs(Xangle) > 0 or onp.abs(Yangle) > 0:
             xangle_rad = Xangle*arcsec2rad
             yangle_rad = Yangle*arcsec2rad
 
@@ -1071,7 +1071,7 @@ class Wavefront(BaseWavefront):
         self.fov = det.fov_arcsec
         self.pixelscale = det.fov_arcsec / det_calc_size_pixels 
 
-        if np.size(self.pixelscale)>1:
+        if onp.size(self.pixelscale)>1:
             # check for rectangular arrays
             if self.pixelscale[0] == self.pixelscale[1]:
                 self.pixelscale = self.pixelscale[0]
@@ -1119,9 +1119,9 @@ class Wavefront(BaseWavefront):
         mft = MatrixFourierTransform(centering='ADJUSTABLE', verbose=False)
 
         # these can be either scalar or 2-element lists/tuples/ndarrays
-        msg_pixscale = ('{0:.4f}'.format(self.pixelscale) if np.size(self.pixelscale) == 1 else
+        msg_pixscale = ('{0:.4f}'.format(self.pixelscale) if onp.size(self.pixelscale) == 1 else
                         '{0:.4f} x {1:.4f} arcsec/pix'.format(self.pixelscale[0], self.pixelscale[1]))
-        msg_det_fov = ('{0:.4f} lam/D'.format(det_fov_lam_d) if np.size(det_fov_lam_d) == 1 else
+        msg_det_fov = ('{0:.4f} lam/D'.format(det_fov_lam_d) if onp.size(det_fov_lam_d) == 1 else
                        '{0:.4f} x {1:.4f}  lam/D'.format(det_fov_lam_d[0], det_fov_lam_d[1]))
 
         msg = '    Propagating w/ InvMFT:  scale={0}    fov={1}    npix={2:d} x {2:d}'.format(
@@ -1488,7 +1488,7 @@ class BaseOpticalSystem(ABC):
 
         # ensure wavelength is a quantity which is iterable:
         # (the check for a quantity of type length is applied in the decorator)
-        if np.size(wavelength) == 1:
+        if onp.size(wavelength) == 1:
             wavelength = np.asarray([wavelength], dtype=_float())
 
         if weight is None:
@@ -1970,7 +1970,7 @@ class OpticalSystem(BaseOpticalSystem):
         _log.debug("Creating input wavefront with wavelength={}, npix={:d}, diam={:.3g}, pixel scale={:.3g} meters/pixel".format(
             wavelength, npix, diam, diam / npix))
 
-        if np.abs(self.source_offset_r) > 0:
+        if onp.abs(self.source_offset_r) > 0:
             # Add a tilt to the input wavefront.
             # First we must work out the handedness of the input pupil relative to the
             # final image plane.  This is needed to apply (to the input pupil) shifts
@@ -3192,8 +3192,8 @@ class Detector(OpticalElement):
             # consistent with having an integer number of pixels
             self.fov_pixels = np.round((fov_arcsec / self.pixelscale))
             self.fov_arcsec = self.fov_pixels * self.pixelscale
-        if np.any(self.fov_pixels <= 0):
-            raise ValueError("FOV in pixels must be a positive quantity. Invalid: " + str(self.fov_pixels))
+        # if onp.any(self.fov_pixels <= 0):
+        #     raise ValueError("FOV in pixels must be a positive quantity. Invalid: " + str(self.fov_pixels))
 
         if offset is not None:
             try:
@@ -3208,7 +3208,7 @@ class Detector(OpticalElement):
     def shape(self):
         fpix = self.fov_pixels
         # have to cast back to int since Quantities are all float internally
-        return (int(fpix), int(fpix)) if np.size(fpix) == 1 else fpix.astype(int)[0:2]
+        return (int(fpix), int(fpix)) if onp.size(fpix) == 1 else fpix.astype(int)[0:2]
 
     def __str__(self):
         return "Detector plane: {} ({}x{} pixels, {:.3f})".format(self.name, self.shape[1], self.shape[0], self.pixelscale)
