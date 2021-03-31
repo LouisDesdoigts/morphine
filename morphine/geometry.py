@@ -67,64 +67,65 @@ def _oneside(x, y0, y1, r):
     to = (abs(x) >= r)
     ti = (abs(x) < r)
     if np.any(to):
-        ans = index_update(ans,to,_arc(x[to], y0[to], y1[to], r))
+        ans =  np.where(to,_arc(x, y0, y1, r),ans)
+        # ans = index_update(ans,to,_arc(x[to], y0[to], y1[to], r))
     if not np.any(ti):
         return ans
 
-    yh = index_update(yh,ti,np.sqrt(r**2 - x[ti]**2))
+    yh = np.where(ti,np.sqrt(r**2 - x**2),yh)
 
     i = ((y0 <= -yh) & ti)
     if np.any(i):
 
         j = ((y1 <= -yh) & i)
         if np.any(j):
-            ans = index_update(ans,j,_arc(x[j], y0[j], y1[j], r))
+            ans = np.where(j,_arc(x, y0, y1, r),ans)
 
         j = ((y1 > -yh) & (y1 <= yh) & i)
         if np.any(j):
-            ans = index_update(ans,j,_arc(x[j], y0[j], -yh[j], r) + \
-                     _chord(x[j], -yh[j], y1[j]))
+            ans = np.where(j,_arc(x, y0, -yh, r) + \
+                     _chord(x, -yh, y1),ans)
 
         j = ((y1 > yh) & i)
         if np.any(j):
-            ans = index_update(ans,j,_arc(x[j], y0[j], -yh[j], r) + \
-                     _chord(x[j], -yh[j], yh[j]) + \
-                     _arc(x[j], yh[j], y1[j], r))
+            ans = np.where(j,_arc(x, y0, -yh, r) + \
+                     _chord(x, -yh, yh) + \
+                     _arc(x, yh, y1, r),ans)
 
     i = ((y0 > -yh) & (y0 < yh) & ti)
     if np.any(i):
 
         j = ((y1 <= -yh) & i)
         if np.any(j):
-            ans = index_update(ans,j,_chord(x[j], y0[j], -yh[j]) + \
-                     _arc(x[j], -yh[j], y1[j], r))
+            ans = np.where(j,_chord(x, y0, -yh) + \
+                     _arc(x, -yh, y1, r),ans)
 
         j = ((y1 > -yh) & (y1 <= yh) & i)
         if np.any(j):
-            ans = index_update(ans,j,_chord(x[j], y0[j], y1[j]))
+            ans = np.where(j,_chord(x, y0, y1),ans)
 
         j = ((y1 > yh) & i)
         if np.any(j):
-            ans = index_update(ans,j,_chord(x[j], y0[j], yh[j]) + \
-                     _arc(x[j], yh[j], y1[j], r))
+            ans = np.where(j,_chord(x, y0, yh) + \
+                     _arc(x, yh, y1, r),ans)
 
     i = ((y0 >= yh) & ti)
     if np.any(i):
 
         j = ((y1 <= -yh) & i)
         if np.any(j):
-            ans = index_update(ans,j,_arc(x[j], y0[j], yh[j], r) + \
-                     _chord(x[j], yh[j], -yh[j]) + \
-                     _arc(x[j], -yh[j], y1[j], r))
+            ans = np.where(j,_arc(x, y0, yh, r) + \
+                     _chord(x, yh, -yh) + \
+                     _arc(x, -yh, y1, r),ans)
 
         j = ((y1 > -yh) & (y1 <= yh) & i)
         if np.any(j):
-            ans = index_update(ans,j,_arc(x[j], y0[j], yh[j], r) + \
-                     _chord(x[j], yh[j], y1[j]))
+            ans = np.where(j,_arc(x, y0, yh, r) + \
+                     _chord(x, yh, y1),ans)
 
         j = ((y1 > yh) & i)
         if np.any(j):
-            ans = index_update(ans,j,_arc(x[j], y0[j], y1[j], r))
+            ans = np.where(j,_arc(x, y0, y1, r),ans)
     return ans
 
 def _intarea(xc, yc, r, x0, x1, y0, y1):
@@ -198,19 +199,19 @@ def filled_circle_aa(shape, xcenter, ycenter, radius, xarray=None, yarray=None,
 
 
     r = np.sqrt( (xarray-xcenter)**2 + (yarray-ycenter)**2)
-    array = index_update(array,r < radius,fillvalue)
+    array = np.where(r < radius, fillvalue, array)
 
     pixscale = np.abs(xarray[0,1] - xarray[0,0])
     area_per_pix = pixscale**2
 
-    if np.abs(pixscale -1.0) > 0.01:
-        import warnings
-        warnings.warn('filled_circle_aa may not yield exact results for grey pixels when pixel scale <1')
-    border = np.where( np.abs(r-radius) < pixscale)
+    # if np.abs(pixscale -1.0) > 0.01:
+    #     import warnings
+    #     warnings.warn('filled_circle_aa may not yield exact results for grey pixels when pixel scale <1')
+    border = np.abs(r-radius) < pixscale
 
-    weights = pixwt(xcenter, ycenter, radius, xarray[border], yarray[border])
+    weights = pixwt(xcenter, ycenter, radius, xarray, yarray)
 
-    array = index_update(array,border,weights *fillvalue/area_per_pix)
+    array = np.where(border,weights *fillvalue/area_per_pix,array)
 
 
     if clip:

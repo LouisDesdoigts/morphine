@@ -122,10 +122,12 @@ install_requires_packages = [
       'scipy>=1.0.0',
       'matplotlib>=2.0.0',
       'astropy>=3.0.0',
+      'jaxlib==0.1.55',
+      'jax==0.1.77'
 ]
 
 
-setup(name=PACKAGENAME,
+setup(name='morphine-optics',
       version=VERSION,
       description=DESCRIPTION,
       scripts=scripts,

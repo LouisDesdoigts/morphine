@@ -74,7 +74,7 @@ class AnalyticOpticalElement(OpticalElement):
 
         if getattr(self, 'inclination_x', 0) != 0 and getattr(self, 'inclination_y', 0) != 0:
             warnings.warn("It is physically inconsistent to set inclinations on both X and Y at the same time.")
-        if np.abs(getattr(self, 'inclination_x', 0)) > 90 or np.abs(getattr(self, 'inclination_y', 0)) > 90:
+        if onp.abs(getattr(self, 'inclination_x', 0)) > 90 or onp.abs(getattr(self, 'inclination_y', 0)) > 90:
             warnings.warn("Inclinations should be within the range -90 to 90 degrees")
 
         # self.shape = None  # no explicit shape required
@@ -520,11 +520,11 @@ class BandLimitedCoronagraph(AnalyticImagePlaneElement):
             # This does not work - shape appears to be curved not linear.
             # This is NOT a linear relationship. See calc_blc_wedge in test_morphine.
 
-            if np.abs(self.wavelength - 2.1e-6) < 0.1e-6:
+            if onp.abs(self.wavelength - 2.1e-6) < 0.1e-6:
                 polyfitcoeffs = np.array([2.01210737e-04, -7.18758337e-03, 1.12381516e-01,
                                           -1.00877701e+00, 5.72538509e+00, -2.12943497e+01,
                                           5.18745152e+01, -7.97815606e+01, 7.02728734e+01])
-            elif np.abs(self.wavelength - 4.6e-6) < 0.1e-6:
+            elif onp.abs(self.wavelength - 4.6e-6) < 0.1e-6:
                 polyfitcoeffs = np.array([9.16195583e-05, -3.27354831e-03, 5.11960734e-02,
                                           -4.59674047e-01, 2.60963397e+00, -9.70881273e+00,
                                           2.36585911e+01, -3.63978587e+01, 3.20703511e+01])
@@ -543,7 +543,7 @@ class BandLimitedCoronagraph(AnalyticImagePlaneElement):
             # add in the ND squares. Note the positions are not exactly the same in the two wedges.
             # See the figures in Krist et al. of how the 6 ND squares are spaced among the 5
             # corongraph regions. Also add in the opaque border of the coronagraph mask holder.
-            if np.abs(self.wavelength - 2.1e-6) < 0.1e-6:
+            if onp.abs(self.wavelength - 2.1e-6) < 0.1e-6:
                 # half ND square on each side
                 wnd = np.where(
                     (y > 5) &
@@ -553,7 +553,7 @@ class BandLimitedCoronagraph(AnalyticImagePlaneElement):
                     )
                 )
                 wborder = np.where(np.abs(y) > 10)
-            elif np.abs(self.wavelength - 4.6e-6) < 0.1e-6:
+            elif onp.abs(self.wavelength - 4.6e-6) < 0.1e-6:
                 wnd = np.where(
                     (y > 5) &
                     (

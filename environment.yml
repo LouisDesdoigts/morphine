@@ -7,4 +7,5 @@ dependencies:
    - scipy >= 1.0.0
    - matplotlib >= 2.0.0
    - astropy >= 3.0.0
-   - jax
+   - jax==0.1.77
+   - jaxlib=0.1.55
