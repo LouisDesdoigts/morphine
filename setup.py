@@ -124,9 +124,8 @@ install_requires_packages = [
       'astropy>=3.0.0',
 ]
 
-DISTRIBUTION_NAME = 'morphine_optics'
 
-setup(name=DISTRIBUTION_NAME,
+setup(name=PACKAGENAME,
       version=VERSION,
       description=DESCRIPTION,
       scripts=scripts,
