@@ -7,6 +7,7 @@
 import jax.numpy as np
 from jax import jit, vmap
 from jax.ops import index_update
+from jax.lax import cond
 
 from . import accel_math
 accel_math._USE_NUMEXPR = False

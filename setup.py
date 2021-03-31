@@ -70,7 +70,7 @@ LONG_DESCRIPTION = ast.get_docstring(module_ast)
 builtins._ASTROPY_PACKAGE_NAME_ = PACKAGENAME
 
 # VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
-VERSION = '0.9.2'
+VERSION = '0.9.2.1`'
 
 # Indicates if this version is a release version
 RELEASE = 'dev' not in VERSION
@@ -122,9 +122,10 @@ install_requires_packages = [
       'scipy>=1.0.0',
       'matplotlib>=2.0.0',
       'astropy>=3.0.0',
+      'jax'
 ]
 
-DISTRIBUTION_NAME = 'morphine_optics'
+DISTRIBUTION_NAME = 'morphine-optics'
 
 setup(name=DISTRIBUTION_NAME,
       version=VERSION,
