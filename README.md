@@ -1,6 +1,7 @@
 # morphine - derivatives from poppy
 ![](https://github.com/benjaminpope/morphine/workflows/integration/badge.svg)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![PyPI version](https://badge.fury.io/py/morphine-optics.svg)](https://badge.fury.io/py/morphine-optics)
 
 ## Contributors
 
