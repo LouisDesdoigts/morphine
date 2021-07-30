@@ -122,7 +122,8 @@ install_requires_packages = [
       'scipy>=1.0.0',
       'matplotlib>=2.0.0',
       'astropy>=3.0.0',
-      'jaxlib==0.1.55',
+      # 'jaxlib==0.1.55',
+      'jaxlib==0.1.57',
       'jax==0.1.77'
 ]
 
