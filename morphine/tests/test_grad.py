@@ -4,21 +4,21 @@ from jax import grad, jit, vmap
 from jax import random
 import matplotlib.pyplot as plt
 
-import poppy
+import morphine
 
 import os
 TESTDIR = os.path.abspath(os.path.dirname(__file__))
 ddir = os.path.join(TESTDIR,'../data/')
 
 
-import logging
-_log = logging.getLogger('poppy_tests')
+# import logging
+# _log = logging.getLogger('morphine_tests')
 
 
 def test_propagate():
 
-    osys = poppy.OpticalSystem()
-    osys.add_pupil(poppy.CircularAperture(radius=3))    # pupil radius in meters
+    osys = morphine.OpticalSystem()
+    osys.add_pupil(morphine.CircularAperture(radius=3))    # pupil radius in meters
     osys.add_detector(pixelscale=0.025, fov_arcsec=0.75)  # image plane coordinates in arcseconds
 
     def objective(wavelength):
@@ -30,8 +30,8 @@ def test_propagate():
     print('Propagation worked!')
 
 def test_grad():
-    osys = poppy.OpticalSystem()
-    osys.add_pupil(poppy.CircularAperture(radius=3))    # pupil radius in meters
+    osys = morphine.OpticalSystem()
+    osys.add_pupil(morphine.CircularAperture(radius=3))    # pupil radius in meters
     osys.add_detector(pixelscale=0.025, fov_arcsec=0.75)  # image plane coordinates in arcseconds
 
     def objective(wavelength):
