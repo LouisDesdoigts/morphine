@@ -1,5 +1,5 @@
 # morphine - derivatives from poppy
-![](https://github.com/benjaminpope/morphine/workflows/integration/badge.svg)
+[![integration](https://github.com/benjaminpope/morphine/actions/workflows/github-workflow.yml/badge.svg)](https://github.com/benjaminpope/morphine/actions/workflows/github-workflow.yml)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![PyPI version](https://badge.fury.io/py/morphine-optics.svg)](https://badge.fury.io/py/morphine-optics)
 [![arXiv](http://img.shields.io/badge/arXiv-2011.09780-blue.svg?style=flat)](http://arxiv.org/abs/2011.09780)
