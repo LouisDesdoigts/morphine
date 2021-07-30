@@ -6,7 +6,7 @@
 
 ## Contributors
 
-morphine hacks - Benjamin Pope
+morphine hacks - Benjamin Pope, Louis Desdoigts
 
 poppy base code - POPPY code by Marshall Perrin, Joseph Long, Ewan Douglas, Neil Zimmerman, Anand Sivaramakrishnan, Shannon Osborne, Kyle Douglass, Maciek Grochowicz, Phillip Springer, & Ted Corcovilos, with additional contributions from Remi Soummer, Kyle Van Gorkom, Jonathan Fraine, Christine Slocum, Roman Yurchak, and others on the Astropy team.
 
