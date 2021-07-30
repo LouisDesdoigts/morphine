@@ -17,7 +17,10 @@ jobs:
           with:
             python-version: '3.7' # Version range or exact version of a Python version to use, using semvers version range syntax.
             architecture: 'x64' # (x64 or x86)
-                      
+        
+        - run: pip install --upgrade pytest
+          name: 'install jax'
+              
         - run:
             python setup.py install
           name: 'Install morphine & dependencies'
