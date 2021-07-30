@@ -25,5 +25,5 @@ jobs:
             python setup.py install
           name: 'Install morphine & dependencies'
 
-        - run: pytest --junitxml=junit/test-results.xml 
+        - run: pytest morphine/tests/*.py --junitxml=junit/test-results.xml 
           name: 'Run pytest'
