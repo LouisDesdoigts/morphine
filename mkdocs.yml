@@ -1,6 +1,8 @@
 site_name: morphine - derivatives from poppy
 nav:
     - Home: index.md
+    - 'New Features with Jax':
+      - jit-compilation: notebooks/jit_demo.ipynb
 theme:
   name: "material"
 repo_url: https://github.com/benjaminpope/morphine
