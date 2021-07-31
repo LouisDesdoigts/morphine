@@ -257,15 +257,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#talks" class="md-nav__link">
-    Talks
+  <a href="#citation" class="md-nav__link">
+    Citation
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#citation" class="md-nav__link">
-    Citation
+  <a href="#talks" class="md-nav__link">
+    Talks
   </a>
   
 </li>
@@ -374,15 +374,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#talks" class="md-nav__link">
-    Talks
+  <a href="#citation" class="md-nav__link">
+    Citation
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#citation" class="md-nav__link">
-    Citation
+  <a href="#talks" class="md-nav__link">
+    Talks
   </a>
   
 </li>
@@ -414,7 +414,7 @@
                 <h1 id="morphine-derivatives-from-poppy">morphine - derivatives from poppy</h1>
 <h2 id="about-morphine">About morphine</h2>
 <p>The main hindrance to directly imaging exoplanets comes from optical aberrations that produce speckles that can be difficult to distinguish from real planets. </p>
-<p>The technology underlying deep learning - automatic differentiation or 'autodiff' - allows us to take derivatives by the chain rule of arbitrary numerical simulations, for example finding the kernel phase transfer matrix as the Jacobian of Fourier visibilities with respect to the phase of incoming light. This can be used for kernel phase calibration (<a href="https://arxiv.org/abs/2011.09780">arXiv:2011.09780</a>), as well as for phase retrieval and optical design in highly nonlinear regimes (<a href="https://arxiv.org/abs/2107.00952">arXiv:2107.00952</a>). </p>
+<p>The technology underlying deep learning - automatic differentiation or 'autodiff' - allows us to take derivatives by the chain rule of arbitrary numerical simulations. This can be used for kernel phase calibration (<a href="https://arxiv.org/abs/2011.09780">arXiv:2011.09780</a>), as well as for phase retrieval and optical design in highly nonlinear regimes (<a href="https://arxiv.org/abs/2107.00952">arXiv:2107.00952</a>). </p>
 <p>By rewriting the popular optical simulation package '<a href="https://github.com/mperrin/poppy">poppy</a>' using the autodiff library <a href="https://github.com/google/jax">Google Jax</a>, we present 'morphine', a powerful new open source tool for optics and data analysis.</p>
 <h2 id="contributors">Contributors</h2>
 <p>morphine - <a href="https://github.com/benjaminpope">Benjamin Pope</a>, <a href="https://github.com/LouisDesdoigts">Louis Desdoigts</a>, <a href="https://github.com/alipwong">Alison Wong</a></p>
@@ -426,8 +426,6 @@
 <p><code>git clone https://github.com/benjaminpope/morphine</code></p>
 <p>and run</p>
 <p><code>python setup.py install</code></p>
-<h2 id="talks">Talks</h2>
-<p>Fizeau Hackathon introduction: <a href="https://benjaminpope.github.io/talks/fizeau/fizeau.html">slides</a> and <a href="https://sites.google.com/uci.edu/virtualmaskinghackathon/recordings?authuser=0">recording</a>.</p>
 <h2 id="citation">Citation</h2>
 <p>We would love it if you use <code>morphine</code> in a paper! If you do, please cite</p>
 <pre><code class="language-BibTeX">@ARTICLE{2021ApJ...907...40P,
@@ -467,6 +465,8 @@ archivePrefix = {arXiv},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 </code></pre>
+<h2 id="talks">Talks</h2>
+<p>Fizeau Hackathon introduction: <a href="https://benjaminpope.github.io/talks/fizeau/fizeau.html">slides</a> and <a href="https://sites.google.com/uci.edu/virtualmaskinghackathon/recordings?authuser=0">recording</a>.</p>
 <h2 id="about-poppy">About poppy</h2>
 <p>POPPY (<strong>P</strong>\ hysical <strong>O</strong>\ ptics <strong>P</strong>\ ropagation in <strong>Py</strong>\ thon) is a Python package that simulates physical optical propagation including diffraction. It implements a flexible framework for modeling Fraunhofer and Fresnel diffraction and point spread function formation, particularly in the context of astronomical telescopes.</p>
 <p>POPPY was developed as part of a simulation package for the James Webb Space Telescope, but is more broadly applicable to many kinds of imaging simulations. It is not, however, a substitute for high fidelity optical design software such as Zemax or Code V, but rather is intended as a lightweight alternative for cases for which diffractive rather than geometric optics is the topic of interest, and which require portability between platforms or ease of scripting.</p>
