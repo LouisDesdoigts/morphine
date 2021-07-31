@@ -4,7 +4,7 @@
 
 The main hindrance to directly imaging exoplanets comes from optical aberrations that produce speckles that can be difficult to distinguish from real planets. 
 
-The technology underlying deep learning - automatic differentiation or 'autodiff' - allows us to take derivatives by the chain rule of arbitrary numerical simulations, for example finding the kernel phase transfer matrix as the Jacobian of Fourier visibilities with respect to the phase of incoming light. This can be used for kernel phase calibration ([arXiv:2011.09780](https://arxiv.org/abs/2011.09780)), as well as for phase retrieval and optical design in highly nonlinear regimes ([arXiv:2107.00952](https://arxiv.org/abs/2107.00952)). 
+The technology underlying deep learning - automatic differentiation or 'autodiff' - allows us to take derivatives by the chain rule of arbitrary numerical simulations. This can be used for kernel phase calibration ([arXiv:2011.09780](https://arxiv.org/abs/2011.09780)), as well as for phase retrieval and optical design in highly nonlinear regimes ([arXiv:2107.00952](https://arxiv.org/abs/2107.00952)). 
 
 By rewriting the popular optical simulation package '[poppy](https://github.com/mperrin/poppy)' using the autodiff library [Google Jax](https://github.com/google/jax), we present 'morphine', a powerful new open source tool for optics and data analysis.
 
@@ -27,10 +27,6 @@ Clone with
 and run
 
 `python setup.py install`
-
-## Talks
-
-Fizeau Hackathon introduction: [slides](https://benjaminpope.github.io/talks/fizeau/fizeau.html) and [recording](https://sites.google.com/uci.edu/virtualmaskinghackathon/recordings?authuser=0).
 
 ## Citation
 
@@ -77,6 +73,10 @@ archivePrefix = {arXiv},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 ```
+
+## Talks
+
+Fizeau Hackathon introduction: [slides](https://benjaminpope.github.io/talks/fizeau/fizeau.html) and [recording](https://sites.google.com/uci.edu/virtualmaskinghackathon/recordings?authuser=0).
 
 ## About poppy
 
