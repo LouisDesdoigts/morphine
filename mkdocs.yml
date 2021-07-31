@@ -1,0 +1,18 @@
+site_name: morphine - derivatives from poppy
+nav:
+    - Home: index.md
+theme:
+  name: "material"
+repo_url: https://github.com/benjaminpope/morphine
+plugins:
+  - search
+  - mkdocs-jupyter
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          selection:
+            docstring_style: "numpy"
+          rendering:
+            show_source: false
+      custom_templates: templates
